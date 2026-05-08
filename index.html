@@ -786,12 +786,6 @@
   function switchSection(sec) {
     state.section = sec;
     document.querySelectorAll('.sec-btn').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
-    const isKanji = sec === 'kanji';
-    $('n4opt').disabled = isKanji;
-    if (isKanji && state.level === 'N4') {
-      state.level = 'N5';
-      $('level').value = 'N5';
-    }
     state.kanjiGroup = 'all';
     buildLessonSelect();
     switchMode(state.mode);
