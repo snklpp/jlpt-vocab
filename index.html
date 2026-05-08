@@ -1,848 +1,860 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JLPT Vocab & Kanji Trainer</title>
+<title>JLPT 語彙・漢字</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --bg: #fafaf7;
+    --bg: #f6f4ef;
     --card: #ffffff;
-    --ink: #1a1a1a;
-    --muted: #6b7280;
-    --accent: #d63638;
-    --accent-light: #fde8e8;
-    --border: #e5e7eb;
-    --good: #16a34a;
-    --good-light: #dcfce7;
-    --bad: #dc2626;
-    --bad-light: #fee2e2;
-    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+    --ink: #111111;
+    --muted: #8a8a8a;
+    --accent: #c0392b;
+    --accent-soft: #fbeae9;
+    --border: #e4e0d8;
+    --surface: #eeebe4;
+    --good: #1a7a4a;
+    --good-soft: #e4f4ec;
+    --bad: #c0392b;
+    --bad-soft: #fde8e8;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.05);
+    --radius: 16px;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  [data-theme="dark"] {
+    --bg: #0d0d0d;
+    --card: #181818;
+    --ink: #ede9e0;
+    --muted: #606060;
+    --accent: #e05c52;
+    --accent-soft: #2a1412;
+    --border: #282828;
+    --surface: #202020;
+    --good: #2ecc71;
+    --good-soft: #0d2b1e;
+    --bad: #e05c52;
+    --bad-soft: #2a1412;
+    --shadow: 0 2px 8px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  html { color-scheme: light; }
+  [data-theme="dark"] html { color-scheme: dark; }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI",
+      "Noto Sans JP", "Segoe UI", sans-serif;
     background: var(--bg);
     color: var(--ink);
     line-height: 1.5;
     min-height: 100vh;
+    transition: background 0.3s var(--ease), color 0.3s var(--ease);
   }
-  .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
 
+  .container { max-width: 820px; margin: 0 auto; padding: 2rem 1.25rem 6rem; }
+
+  /* ── Header ── */
   header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;
+    margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;
   }
-  h1 {
-    font-size: 1.4rem; font-weight: 700;
+  .logo {
+    font-size: 1rem; font-weight: 800; letter-spacing: -0.02em;
     display: flex; align-items: center; gap: 0.5rem;
   }
-  h1 .accent { color: var(--accent); }
+  .logo-badge {
+    background: var(--accent); color: #fff;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+    padding: 0.18rem 0.5rem; border-radius: 6px;
+  }
+  .header-right { display: flex; gap: 0.5rem; align-items: center; }
 
-  /* Top controls */
-  .controls {
-    display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+  /* ── Controls / Chips ── */
+  .chip-group { display: flex; gap: 0.3rem; }
+  .chip {
+    font: inherit; font-size: 0.78rem; font-weight: 600;
+    padding: 0.38rem 0.9rem; border-radius: 99px;
+    border: 1.5px solid var(--border); background: transparent;
+    color: var(--muted); cursor: pointer; letter-spacing: 0.01em;
+    transition: all 0.18s var(--ease); white-space: nowrap;
   }
-  select, button {
-    font: inherit; padding: 0.5rem 0.85rem; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--card);
-    color: var(--ink); cursor: pointer; transition: all 0.15s;
-  }
-  select:hover, button:hover { border-color: var(--ink); }
-  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-  button.primary:hover { opacity: 0.85; }
-  button.danger { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chip:hover { border-color: var(--ink); color: var(--ink); }
+  .chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
 
-  /* Mode tabs */
-  .modes {
-    display: flex; gap: 0.25rem; margin-bottom: 1rem;
-    background: var(--card); padding: 0.25rem; border-radius: 10px;
-    border: 1px solid var(--border); width: fit-content;
+  select {
+    font: inherit; font-size: 0.78rem; font-weight: 600;
+    padding: 0.38rem 2rem 0.38rem 0.85rem; border-radius: 99px;
+    border: 1.5px solid var(--border); background: var(--card);
+    color: var(--ink); cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a8a8a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    transition: border-color 0.15s;
   }
-  .mode-btn {
-    border: none; background: transparent; padding: 0.5rem 1rem;
-    border-radius: 7px; font-weight: 500; color: var(--muted);
-  }
-  .mode-btn.active { background: var(--ink); color: #fff; }
+  select:hover { border-color: var(--ink); }
 
-  /* Stats bar */
-  .stats {
-    display: flex; gap: 1rem; align-items: center; margin-bottom: 1.25rem;
-    font-size: 0.9rem; color: var(--muted); flex-wrap: wrap;
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid var(--border); background: var(--card);
+    color: var(--muted); cursor: pointer; font-size: 0.95rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s var(--ease); flex-shrink: 0;
   }
-  .stats strong { color: var(--ink); font-weight: 600; }
-  .progress-bar {
-    flex: 1; min-width: 120px; height: 6px; background: var(--border);
-    border-radius: 99px; overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%; background: var(--accent); transition: width 0.3s;
-  }
+  .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
 
-  /* Card */
-  .card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px; box-shadow: var(--shadow);
-    padding: 2.5rem 1.5rem; min-height: 280px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; cursor: pointer; user-select: none;
-    transition: transform 0.15s;
+  /* ── Nav row ── */
+  .nav-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    flex-wrap: wrap; margin-bottom: 1.25rem;
   }
-  .card:active { transform: scale(0.99); }
-  .card .cat {
-    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
-    color: var(--muted); margin-bottom: 1rem;
-  }
-  .card .jp {
-    font-size: 3rem; font-weight: 600; margin-bottom: 0.5rem;
-    line-height: 1.2; word-break: keep-all;
-  }
-  .card .reading {
-    font-size: 1.25rem; color: var(--muted); margin-bottom: 0.25rem;
-  }
-  .card .romaji {
-    font-size: 1rem; color: var(--muted); font-style: italic; margin-bottom: 1rem;
-  }
-  .card .en {
-    font-size: 1.5rem; color: var(--accent); font-weight: 500; margin-top: 0.5rem;
-  }
-  .card .hint {
-    margin-top: 1.5rem; font-size: 0.8rem; color: var(--muted);
-  }
+  .divider { width: 1px; height: 18px; background: var(--border); margin: 0 0.2rem; }
 
-  /* Card actions */
-  .card-actions {
-    display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: center;
-    flex-wrap: wrap;
-  }
-  .card-actions button { min-width: 90px; }
-
-  /* Quiz mode */
-  .quiz-question {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px; box-shadow: var(--shadow);
-    padding: 2rem 1.5rem; text-align: center;
-  }
-  .quiz-prompt {
-    font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem;
-    text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .quiz-word { font-size: 2.5rem; font-weight: 600; margin-bottom: 0.4rem; }
-  .quiz-reading { font-size: 1rem; color: var(--muted); margin-bottom: 1.5rem; }
-  .quiz-options {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
-    max-width: 600px; margin: 0 auto;
-  }
-  @media (max-width: 480px) { .quiz-options { grid-template-columns: 1fr; } }
-  .quiz-option {
-    text-align: left; padding: 0.85rem 1rem; font-size: 0.95rem;
-    border: 1px solid var(--border); border-radius: 10px; background: var(--card);
-    transition: all 0.15s;
-  }
-  .quiz-option:hover:not(:disabled) { border-color: var(--ink); }
-  .quiz-option.correct { background: var(--good-light); border-color: var(--good); color: var(--good); font-weight: 600; }
-  .quiz-option.wrong { background: var(--bad-light); border-color: var(--bad); color: var(--bad); }
-  .quiz-option:disabled { cursor: default; }
-
-  .quiz-feedback {
-    margin-top: 1.25rem; padding: 0.75rem 1rem; border-radius: 8px;
-    font-size: 0.9rem; text-align: center;
-  }
-  .quiz-feedback.good { background: var(--good-light); color: var(--good); }
-  .quiz-feedback.bad { background: var(--bad-light); color: var(--bad); }
-
-  /* List view */
-  .list-table {
-    width: 100%; background: var(--card); border-radius: 12px;
-    border: 1px solid var(--border); overflow: hidden;
-  }
-  .list-row {
-    display: grid; grid-template-columns: 1.4fr 1.2fr 1fr 1.4fr;
-    gap: 1rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border);
-    font-size: 0.95rem; align-items: center;
-  }
-  .list-row:last-child { border-bottom: none; }
-  .list-row.header {
-    background: #f3f4f6; font-weight: 600; font-size: 0.8rem;
-    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
-  }
-  .list-row .jp { font-weight: 600; font-size: 1.05rem; }
-  .list-row .reading { color: var(--muted); }
-  .list-row .romaji { color: var(--muted); font-style: italic; font-size: 0.85rem; }
-  @media (max-width: 600px) {
-    .list-row { grid-template-columns: 1fr 1fr; }
-    .list-row .romaji { display: none; }
-    .list-row.header .romaji { display: none; }
-  }
-
-  /* Section labels in list */
-  .section-label {
-    margin: 1.25rem 0 0.5rem; font-size: 0.85rem; font-weight: 600;
-    color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .section-label:first-child { margin-top: 0; }
-
-  /* Bottom nav */
-  .nav {
-    display: flex; gap: 0.5rem; margin-top: 1.25rem; justify-content: center;
-    align-items: center;
-  }
-  .nav .counter { font-size: 0.9rem; color: var(--muted); min-width: 80px; text-align: center; }
-
-  /* Final summary */
-  .summary {
-    background: var(--card); border-radius: 16px; padding: 2.5rem 1.5rem;
-    text-align: center; box-shadow: var(--shadow); border: 1px solid var(--border);
-  }
-  .summary .score {
-    font-size: 3rem; font-weight: 700; color: var(--accent); margin: 0.5rem 0;
-  }
-  .summary p { color: var(--muted); margin-bottom: 1.25rem; }
-
-  .empty {
-    text-align: center; padding: 3rem 1rem; color: var(--muted);
-  }
-
-  /* Toggle for romaji */
+  /* ── Options ── */
   .options-bar {
-    display: flex; gap: 1rem; align-items: center;
-    margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted);
-    flex-wrap: wrap;
+    display: flex; gap: 1.25rem; align-items: center;
+    font-size: 0.76rem; color: var(--muted); flex-wrap: wrap;
+    margin-bottom: 1rem;
   }
   .checkbox-label {
     display: inline-flex; align-items: center; gap: 0.4rem;
     cursor: pointer; user-select: none;
   }
-  .checkbox-label input { cursor: pointer; }
+  .checkbox-label input { cursor: pointer; accent-color: var(--accent); }
 
-  /* Section toggle (Vocab / Kanji) */
-  .section-toggle {
-    display: flex; gap: 0.25rem;
-    background: var(--card); padding: 0.25rem; border-radius: 10px;
-    border: 1px solid var(--border); width: fit-content; margin-bottom: 1rem;
+  /* ── Progress ── */
+  .progress-track {
+    height: 2px; background: var(--border); border-radius: 99px;
+    overflow: hidden; margin-bottom: 1.25rem;
   }
-  .sec-btn {
-    border: none; background: transparent; padding: 0.45rem 1.1rem;
-    border-radius: 7px; font-weight: 600; color: var(--muted); font-size: 0.9rem;
+  .progress-fill {
+    height: 100%; background: var(--accent); border-radius: 99px;
+    transition: width 0.5s var(--ease);
   }
-  .sec-btn.active { background: var(--accent); color: #fff; }
+  .stats {
+    display: flex; gap: 1.25rem; align-items: center;
+    font-size: 0.78rem; color: var(--muted); margin-bottom: 1.25rem;
+  }
+  .stats strong { color: var(--ink); font-weight: 700; }
 
-  /* Kanji card */
-  .kanji-card {
+  /* ── Flashcard 3D flip ── */
+  .flashcard-scene {
+    perspective: 1000px; margin-bottom: 1rem;
+  }
+  .flashcard-inner {
+    position: relative; width: 100%; min-height: 340px;
+    transform-style: preserve-3d;
+    transition: transform 0.55s var(--ease);
+    cursor: pointer;
+  }
+  .flashcard-inner.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px; box-shadow: var(--shadow);
-    padding: 2rem 1.5rem; min-height: 300px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; cursor: pointer; user-select: none;
-    transition: transform 0.15s;
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 2.5rem 2rem; text-align: center;
+    min-height: 340px;
   }
-  .kanji-card:active { transform: scale(0.99); }
+  .card-face.back { transform: rotateY(180deg); }
+
+  /* Vocab card content */
+  .card-cat {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin-bottom: 1.25rem; font-weight: 600;
+  }
+  .card-jp { font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.35rem; }
+  .card-reading { font-size: 1.15rem; color: var(--muted); margin-bottom: 0.1rem; }
+  .card-romaji { font-size: 0.85rem; color: var(--muted); font-style: italic; margin-bottom: 0.85rem; }
+  .card-en { font-size: 1.65rem; font-weight: 700; color: var(--accent); }
+  .tap-hint {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin-top: 2rem; opacity: 0.7;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .tap-hint::before, .tap-hint::after {
+    content: ''; display: inline-block; width: 28px; height: 1px; background: var(--border);
+  }
+
+  /* Kanji card content */
+  .kanji-group-tag {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 0.2rem 0.6rem; border-radius: 99px; margin-bottom: 1.25rem;
+    font-weight: 700;
+  }
   .kanji-char {
-    font-size: 6rem; font-weight: 700; line-height: 1; margin-bottom: 0.5rem;
-    color: var(--ink);
+    font-size: 6.5rem; font-weight: 700; line-height: 1;
+    margin-bottom: 0.25rem; letter-spacing: -0.02em;
   }
-  .kanji-group-label {
-    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--muted); margin-bottom: 1.25rem;
-  }
-  .kanji-readings {
-    display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 0.75rem;
-    flex-wrap: wrap;
-  }
+  .kanji-readings { display: flex; gap: 2.25rem; justify-content: center; margin-bottom: 0.6rem; }
   .kanji-reading-block { text-align: center; }
   .kanji-reading-label {
-    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--muted); display: block; margin-bottom: 0.2rem;
+    font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); display: block; margin-bottom: 0.18rem; font-weight: 700;
   }
-  .kanji-reading-val { font-size: 1.15rem; color: var(--ink); }
-  .kanji-imi { font-size: 1.1rem; color: var(--muted); margin-bottom: 0.4rem; }
-  .kanji-en { font-size: 1.6rem; color: var(--accent); font-weight: 600; }
+  .kanji-reading-val { font-size: 1.15rem; font-weight: 500; }
+  .kanji-imi { font-size: 0.95rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .kanji-en { font-size: 1.65rem; font-weight: 700; color: var(--accent); }
+  .kanji-mnemonic {
+    margin-top: 1.25rem; padding: 0.75rem 1rem;
+    background: var(--surface); border-radius: 10px;
+    border-left: 3px solid var(--accent);
+    max-width: 360px; text-align: left; line-height: 1.65;
+    font-size: 0.8rem; color: var(--muted);
+  }
+  .kanji-mnemonic-label {
+    font-size: 0.56rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--accent); font-weight: 700; display: block; margin-bottom: 0.3rem;
+  }
 
-  /* Kanji list */
-  .kanji-group-header {
-    margin: 1.25rem 0 0.5rem; font-size: 0.85rem; font-weight: 700;
-    color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+  /* Card nav */
+  .card-nav {
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
   }
-  .kanji-table {
-    width: 100%; background: var(--card); border-radius: 12px;
-    border: 1px solid var(--border); overflow: hidden; margin-bottom: 0.5rem;
+  .btn {
+    font: inherit; font-size: 0.8rem; font-weight: 700;
+    padding: 0.5rem 1.3rem; border-radius: 99px;
+    border: 1.5px solid var(--border); background: var(--card);
+    color: var(--ink); cursor: pointer; letter-spacing: 0.01em;
+    transition: all 0.18s var(--ease);
   }
-  .kanji-row {
-    display: grid; grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr;
-    gap: 0.75rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
-    font-size: 0.9rem; align-items: center;
+  .btn:hover:not(:disabled) { border-color: var(--ink); }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .btn.primary:hover:not(:disabled) { opacity: 0.8; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .counter { font-size: 0.76rem; color: var(--muted); min-width: 68px; text-align: center; }
+
+  /* ── Quiz ── */
+  .quiz-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 2.5rem 2rem; text-align: center;
   }
-  .kanji-row:last-child { border-bottom: none; }
-  .kanji-row.kheader {
-    background: #f3f4f6; font-weight: 600; font-size: 0.75rem;
-    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  .quiz-label {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin-bottom: 1.25rem; font-weight: 600;
   }
-  .kanji-row .kchar { font-size: 1.5rem; font-weight: 700; }
+  .quiz-word { font-size: 5.5rem; line-height: 1; margin-bottom: 0.4rem; font-weight: 700; }
+  .quiz-word.text { font-size: 2.2rem; }
+  .quiz-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.75rem; }
+  .quiz-options {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+    max-width: 540px; margin: 0 auto;
+  }
+  @media (max-width: 480px) { .quiz-options { grid-template-columns: 1fr; } }
+  .quiz-option {
+    text-align: left; padding: 0.85rem 1.1rem; font-size: 0.88rem;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--card); cursor: pointer;
+    transition: all 0.15s var(--ease); font: inherit; color: var(--ink);
+  }
+  .quiz-option:hover:not(:disabled) { border-color: var(--ink); background: var(--surface); }
+  .quiz-option.correct { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 700; }
+  .quiz-option.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+  .quiz-option:disabled { cursor: default; }
+  .quiz-feedback {
+    margin-top: 1rem; padding: 0.6rem 1rem; border-radius: 8px;
+    font-size: 0.82rem; animation: fadeIn 0.2s;
+  }
+  .quiz-feedback.good { background: var(--good-soft); color: var(--good); }
+  .quiz-feedback.bad { background: var(--bad-soft); color: var(--bad); }
+
+  /* ── List ── */
+  .list-group-header {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); font-weight: 700;
+    margin: 1.5rem 0 0.5rem; padding-left: 0.25rem;
+  }
+  .list-group-header:first-child { margin-top: 0; }
+  .list-table {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; margin-bottom: 0.25rem;
+  }
+  .list-row {
+    display: grid; gap: 0.75rem; padding: 0.7rem 1.1rem;
+    border-bottom: 1px solid var(--border); font-size: 0.86rem; align-items: center;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row.header {
+    background: var(--surface); font-weight: 700; font-size: 0.65rem;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+  }
+  .vrow { grid-template-columns: 1.5fr 1.2fr 0.9fr 1.4fr; }
+  .krow { grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr; }
+  .list-row .kchar { font-size: 1.55rem; font-weight: 700; }
+  .list-row .jp { font-weight: 700; font-size: 1.05rem; }
+  .list-row .muted { color: var(--muted); }
+  .list-row .italic { color: var(--muted); font-style: italic; font-size: 0.8rem; }
   @media (max-width: 560px) {
-    .kanji-row { grid-template-columns: 2.2rem 1fr 1fr 1.4fr; }
-    .kanji-row .kimi { display: none; }
-    .kanji-row.kheader .kimi { display: none; }
+    .krow { grid-template-columns: 2rem 1fr 1fr 1.4fr; }
+    .list-row .kimi { display: none; }
   }
+  @media (max-width: 600px) {
+    .vrow { grid-template-columns: 1fr 1fr; }
+    .list-row .romaji-col { display: none; }
+  }
+
+  /* ── Summary ── */
+  .summary {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 3.5rem 2rem; text-align: center;
+  }
+  .summary-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--muted); }
+  .summary-score {
+    font-size: 4.5rem; font-weight: 800; color: var(--accent);
+    line-height: 1; margin: 0.25rem 0 0.5rem;
+    letter-spacing: -0.03em;
+  }
+  .summary-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .btn-group { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+
+  .empty { text-align: center; padding: 4rem 1rem; color: var(--muted); font-size: 0.9rem; }
+
+  /* ── Animations ── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .animate-in { animation: fadeIn 0.28s var(--ease); }
 </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>JLPT <span class="accent">語彙・漢字</span> Trainer</h1>
-      <div class="controls">
-        <select id="level">
-          <option value="N5">N5</option>
-          <option value="N4" id="n4opt">N4</option>
-        </select>
-        <select id="lesson"></select>
-      </div>
-    </header>
+<div class="container">
 
-    <div class="section-toggle">
-      <button class="sec-btn active" data-sec="vocab">語彙 Vocab</button>
-      <button class="sec-btn" data-sec="kanji">漢字 Kanji</button>
+  <header>
+    <div class="logo">
+      JLPT <span class="logo-badge">語彙・漢字</span>
     </div>
-
-    <div class="modes">
-      <button class="mode-btn active" data-mode="flashcard">Flashcards</button>
-      <button class="mode-btn" data-mode="quiz">Quiz</button>
-      <button class="mode-btn" data-mode="list">List</button>
+    <div class="header-right">
+      <select id="level" title="JLPT level">
+        <option value="N5">N5</option>
+        <option value="N4">N4</option>
+      </select>
+      <select id="lesson" title="Lesson / group" style="max-width:190px"></select>
+      <button class="icon-btn" id="themeBtn" title="Toggle dark/light mode">☽</button>
     </div>
+  </header>
 
-    <div class="options-bar">
-      <label class="checkbox-label" id="romajiWrap">
-        <input type="checkbox" id="showRomaji" checked> Show romaji
-      </label>
-      <label class="checkbox-label">
-        <input type="checkbox" id="shuffleCards"> Shuffle
-      </label>
-      <label class="checkbox-label" id="quizDirWrap" style="display:none">
-        <input type="checkbox" id="quizReverse"> EN → JP
-      </label>
+  <div class="nav-row">
+    <div class="chip-group">
+      <button class="chip active" data-sec="vocab">語彙 Vocab</button>
+      <button class="chip" data-sec="kanji">漢字 Kanji</button>
     </div>
-
-    <div class="stats" id="stats"></div>
-    <div id="content"></div>
+    <div class="divider"></div>
+    <div class="chip-group">
+      <button class="chip active" data-mode="flashcard">Cards</button>
+      <button class="chip" data-mode="quiz">Quiz</button>
+      <button class="chip" data-mode="list">List</button>
+    </div>
   </div>
 
-<script src="vocab.js"></script>
-<script src="kanji.js"></script>
+  <div class="options-bar">
+    <label class="checkbox-label" id="romajiWrap">
+      <input type="checkbox" id="showRomaji" checked> Romaji
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" id="shuffleCards"> Shuffle
+    </label>
+    <label class="checkbox-label" id="quizDirWrap" style="display:none">
+      <input type="checkbox" id="quizReverse"> EN → JP
+    </label>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="stats" id="stats"></div>
+  <div id="content"></div>
+</div>
+
+<script src="vocab.js?v=3"></script>
+<script src="kanji.js?v=3"></script>
 <script>
-  const $ = id => document.getElementById(id);
-  const state = {
-    section: 'vocab',   // 'vocab' | 'kanji'
-    level: 'N5',
-    lesson: 1,
-    kanjiGroup: 'all',
-    mode: 'flashcard',
-    idx: 0,
-    flipped: false,
-    deck: [],
-    showRomaji: true,
-    shuffle: false,
-    quiz: { idx: 0, score: 0, answered: false, options: [], reverse: false, total: 0 },
-    progress: loadProgress(),
-  };
+const $ = id => document.getElementById(id);
 
-  function loadProgress() {
-    try { return JSON.parse(localStorage.getItem('jlpt_progress') || '{}'); }
-    catch { return {}; }
-  }
-  function saveProgress() {
-    localStorage.setItem('jlpt_progress', JSON.stringify(state.progress));
-  }
-  function progKey(level, lesson) { return `${level}_${lesson}`; }
+// ── Theme ──
+const savedTheme = localStorage.getItem('jlpt_theme') || 'light';
+document.documentElement.dataset.theme = savedTheme;
+$('themeBtn').textContent = savedTheme === 'dark' ? '☀' : '☽';
+$('themeBtn').addEventListener('click', () => {
+  const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('jlpt_theme', t);
+  $('themeBtn').textContent = t === 'dark' ? '☀' : '☽';
+});
 
-  function shuffleArr(a) {
-    const arr = [...a];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
+// ── State ──
+const state = {
+  section: 'vocab',
+  level: 'N5',
+  lesson: 1,
+  kanjiGroup: 'all',
+  mode: 'flashcard',
+  idx: 0,
+  flipped: false,
+  deck: [],
+  showRomaji: true,
+  shuffle: false,
+  quiz: { idx: 0, score: 0, answered: false, options: [], reverse: false, total: 0, order: [] },
+  progress: loadProgress(),
+};
 
-  function buildLessonSelect() {
-    if (state.section === 'kanji') {
-      const groups = getKanjiGroups(state.level);
-      const options = [{ id: 'all', label: `All Kanji (${KANJI[state.level].length})` }]
-        .concat(groups.map(g => ({ id: g, label: `${g} (${getKanjiGroupCount(state.level, g)})` })));
-      $('lesson').innerHTML = options.map(o =>
-        `<option value="${o.id}">${o.label}</option>`
-      ).join('');
-      $('lesson').value = state.kanjiGroup;
-    } else {
-      const lessons = getLessons(state.level);
-      $('lesson').innerHTML = lessons.map(n => {
-        const title = getLessonTitle(state.level, n);
-        const p = state.progress[progKey(state.level, n)];
-        const tick = p?.completed ? ' ✓' : '';
-        return `<option value="${n}">Lesson ${n}: ${title}${tick}</option>`;
-      }).join('');
-      $('lesson').value = state.lesson;
-    }
-  }
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem('jlpt_progress') || '{}'); }
+  catch { return {}; }
+}
+function saveProgress() { localStorage.setItem('jlpt_progress', JSON.stringify(state.progress)); }
+function progKey(level, lesson) { return `${level}_${lesson}`; }
 
-  function loadDeck() {
-    if (state.section === 'kanji') {
-      let words = getKanjiByGroup(state.level, state.kanjiGroup);
-      if (state.shuffle) words = shuffleArr(words);
-      state.deck = words;
-    } else {
-      let words = getLessonWords(state.level, state.lesson);
-      if (state.shuffle) words = shuffleArr(words);
-      state.deck = words;
-    }
-    state.idx = 0;
-    state.flipped = false;
+function shuffleArr(a) {
+  const arr = [...a];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+  return arr;
+}
 
-  function renderStats() {
-    const total = state.deck.length;
-    const unit = state.section === 'kanji' ? 'kanji' : 'words';
-    if (state.mode === 'list') {
-      $('stats').innerHTML = `<span><strong>${total}</strong> ${unit}</span>`;
-      return;
-    }
-    if (state.mode === 'flashcard') {
-      const pct = total ? Math.round(((state.idx) / total) * 100) : 0;
-      $('stats').innerHTML = `
-        <span>Card <strong>${Math.min(state.idx + 1, total)}</strong> of <strong>${total}</strong></span>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-      `;
-      return;
-    }
-    if (state.mode === 'quiz') {
-      const pct = state.quiz.total ? Math.round((state.quiz.idx / state.quiz.total) * 100) : 0;
-      $('stats').innerHTML = `
-        <span>Question <strong>${Math.min(state.quiz.idx + 1, state.quiz.total)}</strong> of <strong>${state.quiz.total}</strong></span>
-        <span>Score: <strong>${state.quiz.score}</strong></span>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-      `;
-    }
-  }
-
-  // ── Kanji flashcard ──
-  function renderKanjiFlashcard() {
-    if (state.deck.length === 0) {
-      $('content').innerHTML = `<div class="empty">No kanji in this group.</div>`; return;
-    }
-    if (state.idx >= state.deck.length) {
-      const key = `kanji_${state.level}_${state.kanjiGroup}`;
-      state.progress[key] = { completed: true, lastReviewed: Date.now() };
-      saveProgress();
-      $('content').innerHTML = `
-        <div class="summary">
-          <p>Group complete!</p>
-          <div class="score">✓</div>
-          <p>You reviewed all ${state.deck.length} kanji.</p>
-          <div class="card-actions">
-            <button class="primary" onclick="restartDeck()">Review again</button>
-          </div>
-        </div>`;
-      return;
-    }
-    const k = state.deck[state.idx];
-    const backHTML = state.flipped ? `
-      <div class="kanji-readings">
-        ${k.kun ? `<div class="kanji-reading-block">
-          <span class="kanji-reading-label">くんよみ</span>
-          <div class="kanji-reading-val">${k.kun}</div>
-        </div>` : ''}
-        ${k.on ? `<div class="kanji-reading-block">
-          <span class="kanji-reading-label">おんよみ</span>
-          <div class="kanji-reading-val">${k.on}</div>
-        </div>` : ''}
-      </div>
-      <div class="kanji-imi">${k.imi}</div>
-      <div class="kanji-en">${k.en}</div>` : `<div class="card hint">Tap to reveal</div>`;
-    $('content').innerHTML = `
-      <div class="kanji-card" id="kflash">
-        <div class="kanji-group-label">${k.group}</div>
-        <div class="kanji-char">${k.kanji}</div>
-        ${backHTML}
-      </div>
-      <div class="nav">
-        <button onclick="prevCard()">← Prev</button>
-        <div class="counter">${state.idx + 1} / ${state.deck.length}</div>
-        <button class="primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Show →'}</button>
-      </div>`;
-    $('kflash').addEventListener('click', () => { state.flipped = !state.flipped; renderKanjiFlashcard(); });
-    renderStats();
-  }
-
-  // ── Kanji quiz ──
-  function startKanjiQuiz() {
-    const pool = getKanjiByGroup(state.level, state.kanjiGroup);
-    if (pool.length < 4) {
-      $('content').innerHTML = `<div class="empty">Need at least 4 kanji for quiz.</div>`; return;
-    }
-    const order = shuffleArr(pool);
-    state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked };
-    renderKanjiQuestion();
-  }
-
-  function renderKanjiQuestion() {
-    if (state.quiz.idx >= state.quiz.total) {
-      const pct = Math.round((state.quiz.score / state.quiz.total) * 100);
-      const msg = pct >= 90 ? '素晴らしい! Excellent!' : pct >= 70 ? 'よくできました! Great job!' : pct >= 50 ? 'がんばって! Keep going.' : 'もう一度! Try again.';
-      const key = `kanji_${state.level}_${state.kanjiGroup}_quiz`;
-      const prev = state.progress[key] || {};
-      if (pct > (prev.bestQuiz || 0)) {
-        state.progress[key] = { ...prev, bestQuiz: pct, lastReviewed: Date.now() };
-        saveProgress();
-      }
-      $('content').innerHTML = `
-        <div class="summary">
-          <p>${msg}</p>
-          <div class="score">${pct}%</div>
-          <p>${state.quiz.score} / ${state.quiz.total} correct</p>
-          <div class="card-actions">
-            <button class="primary" onclick="startKanjiQuiz()">Try again</button>
-          </div>
-        </div>`;
-      return;
-    }
-    const q = state.quiz.order[state.quiz.idx];
-    const allKanji = KANJI[state.level];
-    const pool = allKanji.filter(k => k.en !== q.en);
-    const distractors = shuffleArr(pool).slice(0, 3);
-    const opts = shuffleArr([q, ...distractors]);
-    state.quiz.options = opts;
-    state.quiz.answered = false;
-    const reverse = state.quiz.reverse;
-
-    $('content').innerHTML = `
-      <div class="quiz-question">
-        <div class="quiz-prompt">${reverse ? 'Which kanji means:' : 'What does this kanji mean?'}</div>
-        ${reverse
-          ? `<div class="quiz-word" style="font-size:1.6rem">${q.en}</div>`
-          : `<div class="quiz-word" style="font-size:5rem;line-height:1;margin-bottom:0.5rem">${q.kanji}</div>
-             <div class="quiz-reading" style="font-size:0.85rem">${q.kun ? 'くん: ' + q.kun : ''} ${q.on ? '　おん: ' + q.on : ''}</div>`
-        }
-        <div class="quiz-options" id="qOpts">
-          ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${reverse ? `<span style="font-size:1.5rem">${o.kanji}</span><br><small>${o.imi}</small>` : o.en}</button>`).join('')}
-        </div>
-        <div id="qFeedback"></div>
-      </div>`;
-    $('qOpts').querySelectorAll('.quiz-option').forEach(btn => {
-      btn.addEventListener('click', () => answerKanjiQuiz(parseInt(btn.dataset.i, 10)));
-    });
-    renderStats();
-  }
-
-  function answerKanjiQuiz(i) {
-    if (state.quiz.answered) return;
-    state.quiz.answered = true;
-    const q = state.quiz.order[state.quiz.idx];
-    const picked = state.quiz.options[i];
-    const correctIdx = state.quiz.options.findIndex(o => o.kanji === q.kanji);
-    const buttons = $('qOpts').querySelectorAll('.quiz-option');
-    buttons.forEach((b, bi) => {
-      b.disabled = true;
-      if (bi === correctIdx) b.classList.add('correct');
-      else if (bi === i) b.classList.add('wrong');
-    });
-    if (picked.kanji === q.kanji) {
-      state.quiz.score++;
-      $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
-    } else {
-      $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}</div>`;
-    }
-    renderStats();
-    setTimeout(() => { state.quiz.idx++; renderKanjiQuestion(); }, picked.kanji === q.kanji ? 800 : 2000);
-  }
-
-  // ── Kanji list ──
-  function renderKanjiList() {
-    const groups = state.kanjiGroup === 'all' ? getKanjiGroups(state.level) : [state.kanjiGroup];
-    const html = groups.map(g => {
-      const kanji = getKanjiByGroup(state.level, g);
-      return `
-        <div class="kanji-group-header">${g} (${kanji.length})</div>
-        <div class="kanji-table">
-          <div class="kanji-row kheader">
-            <div>漢字</div><div>くんよみ</div><div>おんよみ</div><div class="kimi">いみ</div><div>English</div>
-          </div>
-          ${kanji.map(k => `
-            <div class="kanji-row">
-              <div class="kchar">${k.kanji}</div>
-              <div>${k.kun || '—'}</div>
-              <div>${k.on || '—'}</div>
-              <div class="kimi">${k.imi}</div>
-              <div>${k.en}</div>
-            </div>`).join('')}
-        </div>`;
-    }).join('');
-    $('content').innerHTML = html;
-    renderStats();
-  }
-
-  function renderFlashcard() {
-    if (state.deck.length === 0) {
-      $('content').innerHTML = `<div class="empty">No words in this lesson.</div>`;
-      return;
-    }
-    if (state.idx >= state.deck.length) {
-      const key = progKey(state.level, state.lesson);
-      state.progress[key] = { ...(state.progress[key] || {}), completed: true, lastReviewed: Date.now() };
-      saveProgress();
-      buildLessonSelect();
-      $('content').innerHTML = `
-        <div class="summary">
-          <p>Lesson complete!</p>
-          <div class="score">✓</div>
-          <p>You reviewed all ${state.deck.length} words.</p>
-          <div class="card-actions">
-            <button class="primary" onclick="restartDeck()">Review again</button>
-            <button onclick="nextLesson()">Next lesson →</button>
-          </div>
-        </div>
-      `;
-      return;
-    }
-    const w = state.deck[state.idx];
-    const romajiHTML = state.showRomaji ? `<div class="romaji">${w.romaji}</div>` : '';
-    const front = `
-      <div class="cat">${w.cat}</div>
-      <div class="jp">${w.jp}</div>
-      ${state.flipped ? `<div class="reading">${w.reading}</div>${romajiHTML}<div class="en">${w.en}</div>` : `<div class="hint">Tap to reveal</div>`}
-    `;
-    $('content').innerHTML = `
-      <div class="card" id="flashcard">${front}</div>
-      <div class="nav">
-        <button onclick="prevCard()">← Prev</button>
-        <div class="counter">${state.idx + 1} / ${state.deck.length}</div>
-        <button class="primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Show →'}</button>
-      </div>
-    `;
-    $('flashcard').addEventListener('click', () => { state.flipped = !state.flipped; renderFlashcard(); });
-    renderStats();
-  }
-
-  function renderCurrentFlashcard() {
-    if (state.section === 'kanji') renderKanjiFlashcard();
-    else renderFlashcard();
-  }
-  function prevCard() {
-    if (state.idx > 0) { state.idx--; state.flipped = false; renderCurrentFlashcard(); }
-  }
-  function nextCard() {
-    if (!state.flipped) { state.flipped = true; renderCurrentFlashcard(); return; }
-    state.idx++; state.flipped = false; renderCurrentFlashcard();
-  }
-  function restartDeck() {
-    loadDeck();
-    if (state.mode === 'flashcard') renderCurrentFlashcard();
-    else if (state.mode === 'quiz') startQuiz();
-  }
-  function nextLesson() {
+// ── Lesson / group select ──
+function buildLessonSelect() {
+  if (state.section === 'kanji') {
+    const groups = getKanjiGroups(state.level);
+    const opts = [{ id: 'all', label: `All (${KANJI[state.level].length})` }]
+      .concat(groups.map(g => ({ id: g, label: `${g} (${getKanjiGroupCount(state.level, g)})` })));
+    $('lesson').innerHTML = opts.map(o => `<option value="${o.id}">${o.label}</option>`).join('');
+    $('lesson').value = state.kanjiGroup;
+  } else {
     const lessons = getLessons(state.level);
-    const i = lessons.indexOf(state.lesson);
-    if (i < lessons.length - 1) {
-      state.lesson = lessons[i + 1];
-      $('lesson').value = state.lesson;
-      switchMode(state.mode);
-    } else {
-      restartDeck();
-    }
+    $('lesson').innerHTML = lessons.map(n => {
+      const title = getLessonTitle(state.level, n);
+      const p = state.progress[progKey(state.level, n)];
+      return `<option value="${n}">L${n}: ${title}${p?.completed ? ' ✓' : ''}</option>`;
+    }).join('');
+    $('lesson').value = state.lesson;
   }
+}
 
-  // Quiz
-  function startQuiz() {
-    const pool = getLessonWords(state.level, state.lesson);
-    if (pool.length < 4) {
-      $('content').innerHTML = `<div class="empty">Need at least 4 words for quiz mode.</div>`;
-      return;
-    }
-    const order = shuffleArr(pool);
-    state.quiz = {
-      idx: 0, score: 0, answered: false, total: order.length, order,
-      reverse: $('quizReverse').checked,
-    };
-    renderQuizQuestion();
+function loadDeck() {
+  if (state.section === 'kanji') {
+    let words = getKanjiByGroup(state.level, state.kanjiGroup);
+    if (state.shuffle) words = shuffleArr(words);
+    state.deck = words;
+  } else {
+    let words = getLessonWords(state.level, state.lesson);
+    if (state.shuffle) words = shuffleArr(words);
+    state.deck = words;
   }
+  state.idx = 0; state.flipped = false;
+}
 
-  function renderQuizQuestion() {
-    if (state.quiz.idx >= state.quiz.total) {
-      const pct = Math.round((state.quiz.score / state.quiz.total) * 100);
-      const msg = pct >= 90 ? '素晴らしい! Excellent!' : pct >= 70 ? 'よくできました! Great job!' : pct >= 50 ? 'がんばって! Keep practicing.' : 'もう一度! Try again.';
-      const key = progKey(state.level, state.lesson);
-      const prev = state.progress[key] || {};
-      if (pct > (prev.bestQuiz || 0)) {
-        state.progress[key] = { ...prev, bestQuiz: pct, lastReviewed: Date.now(), completed: pct >= 70 ? true : prev.completed };
-        saveProgress();
-        buildLessonSelect();
-      }
-      $('content').innerHTML = `
-        <div class="summary">
-          <p>${msg}</p>
-          <div class="score">${pct}%</div>
-          <p>${state.quiz.score} / ${state.quiz.total} correct</p>
-          <div class="card-actions">
-            <button class="primary" onclick="startQuiz()">Try again</button>
-            <button onclick="nextLesson()">Next lesson →</button>
-          </div>
-        </div>
-      `;
-      return;
-    }
-    const q = state.quiz.order[state.quiz.idx];
-    const pool = getLessonWords(state.level, state.lesson).filter(w => w.en !== q.en);
-    const distractors = shuffleArr(pool).slice(0, 3);
-    const opts = shuffleArr([q, ...distractors]);
-    state.quiz.options = opts;
-    state.quiz.answered = false;
+// ── Stats / progress bar ──
+function renderStats() {
+  const total = state.deck.length;
+  const unit = state.section === 'kanji' ? 'kanji' : 'words';
+  if (state.mode === 'list') {
+    $('stats').innerHTML = `<span><strong>${total}</strong> ${unit}</span>`;
+    $('progressFill').style.width = '0%';
+  } else if (state.mode === 'flashcard') {
+    $('stats').innerHTML = `<span>Card <strong>${Math.min(state.idx + 1, total)}</strong> of <strong>${total}</strong></span>`;
+    $('progressFill').style.width = (total ? Math.round((state.idx / total) * 100) : 0) + '%';
+  } else if (state.mode === 'quiz') {
+    const pct = state.quiz.total ? Math.round((state.quiz.idx / state.quiz.total) * 100) : 0;
+    $('stats').innerHTML = `<span>Q <strong>${Math.min(state.quiz.idx + 1, state.quiz.total)}</strong>/<strong>${state.quiz.total}</strong></span><span>Score: <strong>${state.quiz.score}</strong></span>`;
+    $('progressFill').style.width = pct + '%';
+  }
+}
 
-    const reverse = state.quiz.reverse;
-    const promptText = reverse ? 'What is the Japanese word for:' : 'What does this mean?';
-    const wordHTML = reverse
-      ? `<div class="quiz-word">${q.en}</div>`
-      : `<div class="quiz-word">${q.jp}</div><div class="quiz-reading">${q.reading}${state.showRomaji ? ' · <em>' + q.romaji + '</em>' : ''}</div>`;
-
+// ── Kanji flashcard ──
+function renderKanjiFlashcard() {
+  if (state.deck.length === 0) {
+    $('content').innerHTML = `<div class="empty">No kanji in this group.</div>`; return;
+  }
+  if (state.idx >= state.deck.length) {
+    const key = `kanji_${state.level}_${state.kanjiGroup}`;
+    state.progress[key] = { completed: true, lastReviewed: Date.now() };
+    saveProgress();
     $('content').innerHTML = `
-      <div class="quiz-question">
-        <div class="quiz-prompt">${promptText}</div>
-        ${wordHTML}
-        <div class="quiz-options" id="qOpts">
-          ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${reverse ? o.jp + (state.showRomaji ? ' (' + o.romaji + ')' : '') : o.en}</button>`).join('')}
-        </div>
-        <div id="qFeedback"></div>
-      </div>
-    `;
-    $('qOpts').querySelectorAll('.quiz-option').forEach(btn => {
-      btn.addEventListener('click', () => answerQuiz(parseInt(btn.dataset.i, 10)));
-    });
-    renderStats();
+      <div class="summary animate-in">
+        <div class="summary-title">Group complete!</div>
+        <div class="summary-score">✓</div>
+        <div class="summary-sub">Reviewed all ${state.deck.length} kanji.</div>
+        <div class="btn-group"><button class="btn primary" onclick="restartDeck()">Review again</button></div>
+      </div>`;
+    $('progressFill').style.width = '100%';
+    return;
   }
-
-  function answerQuiz(i) {
-    if (state.quiz.answered) return;
-    state.quiz.answered = true;
-    const q = state.quiz.order[state.quiz.idx];
-    const picked = state.quiz.options[i];
-    const correctIdx = state.quiz.options.findIndex(o => o.en === q.en);
-    const buttons = $('qOpts').querySelectorAll('.quiz-option');
-    buttons.forEach((b, bi) => {
-      b.disabled = true;
-      if (bi === correctIdx) b.classList.add('correct');
-      else if (bi === i) b.classList.add('wrong');
-    });
-    if (picked.en === q.en) {
-      state.quiz.score++;
-      $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
-    } else {
-      $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct answer: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}</div>`;
-    }
-    renderStats();
-    setTimeout(() => {
-      state.quiz.idx++;
-      renderQuizQuestion();
-    }, picked.en === q.en ? 800 : 2000);
-  }
-
-  // List view
-  function renderList() {
-    const data = VOCAB[state.level][state.lesson];
-    if (!data) { $('content').innerHTML = `<div class="empty">No data.</div>`; return; }
-    const sectionsHTML = data.sections.map(s => `
-      <div class="section-label">${s.cat}</div>
-      <div class="list-table">
-        <div class="list-row header">
-          <div>Japanese</div><div>Reading</div><div>Romaji</div><div>English</div>
+  const k = state.deck[state.idx];
+  $('content').innerHTML = `
+    <div class="flashcard-scene animate-in">
+      <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="kflash">
+        <div class="card-face front">
+          <div class="kanji-group-tag">${k.group}</div>
+          <div class="kanji-char">${k.kanji}</div>
+          <div class="tap-hint">tap to reveal</div>
         </div>
-        ${s.words.map(w => `
-          <div class="list-row">
-            <div class="jp">${w.jp}</div>
-            <div class="reading">${w.reading}</div>
-            <div class="romaji">${w.romaji}</div>
-            <div>${w.en}</div>
+        <div class="card-face back">
+          <div class="kanji-group-tag">${k.group}</div>
+          <div class="kanji-char" style="font-size:4rem;margin-bottom:0.5rem">${k.kanji}</div>
+          <div class="kanji-readings">
+            ${k.kun ? `<div class="kanji-reading-block">
+              <span class="kanji-reading-label">くんよみ</span>
+              <div class="kanji-reading-val">${k.kun}</div>
+            </div>` : ''}
+            ${k.on ? `<div class="kanji-reading-block">
+              <span class="kanji-reading-label">おんよみ</span>
+              <div class="kanji-reading-val">${k.on}</div>
+            </div>` : ''}
           </div>
-        `).join('')}
+          <div class="kanji-imi">${k.imi}</div>
+          <div class="kanji-en">${k.en}</div>
+          ${k.mnemonic ? `<div class="kanji-mnemonic">
+            <span class="kanji-mnemonic-label">💡 Mnemonic</span>${k.mnemonic}
+          </div>` : ''}
+        </div>
       </div>
-    `).join('');
-    $('content').innerHTML = sectionsHTML;
-    renderStats();
+    </div>
+    <div class="card-nav">
+      <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
+      <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
+      <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
+    </div>`;
+  $('kflash').addEventListener('click', () => { state.flipped = !state.flipped; renderKanjiFlashcard(); });
+  renderStats();
+}
+
+// ── Vocab flashcard ──
+function renderFlashcard() {
+  if (state.deck.length === 0) {
+    $('content').innerHTML = `<div class="empty">No words in this lesson.</div>`; return;
   }
-
-  // Mode switching
-  function switchMode(m) {
-    state.mode = m;
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
-    $('quizDirWrap').style.display = (m === 'quiz') ? 'inline-flex' : 'none';
-    $('romajiWrap').style.display = (state.section === 'kanji') ? 'none' : 'inline-flex';
-    loadDeck();
-    if (state.section === 'kanji') {
-      if (m === 'flashcard') renderKanjiFlashcard();
-      else if (m === 'quiz') startKanjiQuiz();
-      else renderKanjiList();
-    } else {
-      if (m === 'flashcard') renderFlashcard();
-      else if (m === 'quiz') startQuiz();
-      else renderList();
-    }
+  if (state.idx >= state.deck.length) {
+    const key = progKey(state.level, state.lesson);
+    state.progress[key] = { ...(state.progress[key] || {}), completed: true, lastReviewed: Date.now() };
+    saveProgress(); buildLessonSelect();
+    $('content').innerHTML = `
+      <div class="summary animate-in">
+        <div class="summary-title">Lesson complete!</div>
+        <div class="summary-score">✓</div>
+        <div class="summary-sub">Reviewed all ${state.deck.length} words.</div>
+        <div class="btn-group">
+          <button class="btn primary" onclick="restartDeck()">Review again</button>
+          <button class="btn" onclick="nextLesson()">Next lesson →</button>
+        </div>
+      </div>`;
+    $('progressFill').style.width = '100%';
+    return;
   }
+  const w = state.deck[state.idx];
+  const romajiHTML = state.showRomaji ? `<div class="card-romaji">${w.romaji}</div>` : '';
+  $('content').innerHTML = `
+    <div class="flashcard-scene animate-in">
+      <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="flashcard">
+        <div class="card-face front">
+          <div class="card-cat">${w.cat}</div>
+          <div class="card-jp">${w.jp}</div>
+          <div class="tap-hint">tap to reveal</div>
+        </div>
+        <div class="card-face back">
+          <div class="card-cat">${w.cat}</div>
+          <div class="card-jp" style="font-size:2.4rem;margin-bottom:0.3rem">${w.jp}</div>
+          <div class="card-reading">${w.reading}</div>
+          ${romajiHTML}
+          <div class="card-en">${w.en}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-nav">
+      <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
+      <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
+      <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
+    </div>`;
+  $('flashcard').addEventListener('click', () => { state.flipped = !state.flipped; renderFlashcard(); });
+  renderStats();
+}
 
-  function switchSection(sec) {
-    state.section = sec;
-    document.querySelectorAll('.sec-btn').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
-    state.kanjiGroup = 'all';
-    buildLessonSelect();
-    switchMode(state.mode);
+function renderCurrentFlashcard() {
+  if (state.section === 'kanji') renderKanjiFlashcard();
+  else renderFlashcard();
+}
+function prevCard() {
+  if (state.idx > 0) { state.idx--; state.flipped = false; renderCurrentFlashcard(); }
+}
+function nextCard() {
+  if (!state.flipped) { state.flipped = true; renderCurrentFlashcard(); return; }
+  state.idx++; state.flipped = false; renderCurrentFlashcard();
+}
+function restartDeck() {
+  loadDeck();
+  if (state.mode === 'flashcard') renderCurrentFlashcard();
+  else if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
+}
+function nextLesson() {
+  const lessons = getLessons(state.level);
+  const i = lessons.indexOf(state.lesson);
+  if (i < lessons.length - 1) { state.lesson = lessons[i + 1]; $('lesson').value = state.lesson; switchMode(state.mode); }
+  else restartDeck();
+}
+
+// ── Kanji Quiz ──
+function startKanjiQuiz() {
+  const pool = getKanjiByGroup(state.level, state.kanjiGroup);
+  if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 kanji for quiz.</div>`; return; }
+  const order = shuffleArr(pool);
+  state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked };
+  renderKanjiQuestion();
+}
+
+function renderKanjiQuestion() {
+  if (state.quiz.idx >= state.quiz.total) {
+    const pct = Math.round((state.quiz.score / state.quiz.total) * 100);
+    const msg = pct >= 90 ? '素晴らしい!' : pct >= 70 ? 'よくできました!' : pct >= 50 ? 'がんばって!' : 'もう一度!';
+    $('content').innerHTML = `
+      <div class="summary animate-in">
+        <div class="summary-title">${msg}</div>
+        <div class="summary-score">${pct}%</div>
+        <div class="summary-sub">${state.quiz.score} / ${state.quiz.total} correct</div>
+        <div class="btn-group"><button class="btn primary" onclick="startKanjiQuiz()">Try again</button></div>
+      </div>`;
+    $('progressFill').style.width = '100%';
+    return;
   }
+  const q = state.quiz.order[state.quiz.idx];
+  const allKanji = KANJI[state.level];
+  const distractors = shuffleArr(allKanji.filter(k => k.en !== q.en)).slice(0, 3);
+  const opts = shuffleArr([q, ...distractors]);
+  state.quiz.options = opts; state.quiz.answered = false;
+  const reverse = state.quiz.reverse;
+  $('content').innerHTML = `
+    <div class="quiz-wrap animate-in">
+      <div class="quiz-label">${reverse ? 'Which kanji means:' : 'What does this kanji mean?'}</div>
+      ${reverse
+        ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
+        : `<div class="quiz-word">${q.kanji}</div>
+           <div class="quiz-sub">${[q.kun ? 'くん: ' + q.kun : '', q.on ? 'おん: ' + q.on : ''].filter(Boolean).join('　')}</div>`}
+      <div class="quiz-options" id="qOpts">
+        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${
+          reverse
+            ? `<span style="font-size:1.4rem;display:block;margin-bottom:0.15rem">${o.kanji}</span><small style="color:var(--muted);font-size:0.76rem">${o.imi}</small>`
+            : o.en
+        }</button>`).join('')}
+      </div>
+      <div id="qFeedback"></div>
+    </div>`;
+  $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
+    btn.addEventListener('click', () => answerKanjiQuiz(parseInt(btn.dataset.i)))
+  );
+  renderStats();
+}
 
-  // Wire up
-  $('level').addEventListener('change', e => {
-    state.level = e.target.value;
-    if (state.section === 'kanji') {
-      state.kanjiGroup = 'all';
-    } else {
-      state.lesson = getLessons(state.level)[0];
-    }
-    buildLessonSelect();
-    switchMode(state.mode);
+function answerKanjiQuiz(i) {
+  if (state.quiz.answered) return;
+  state.quiz.answered = true;
+  const q = state.quiz.order[state.quiz.idx];
+  const picked = state.quiz.options[i];
+  const correctIdx = state.quiz.options.findIndex(o => o.kanji === q.kanji);
+  $('qOpts').querySelectorAll('.quiz-option').forEach((b, bi) => {
+    b.disabled = true;
+    if (bi === correctIdx) b.classList.add('correct');
+    else if (bi === i) b.classList.add('wrong');
   });
-  $('lesson').addEventListener('change', e => {
-    if (state.section === 'kanji') {
-      state.kanjiGroup = e.target.value;
-    } else {
-      state.lesson = parseInt(e.target.value, 10);
-    }
-    switchMode(state.mode);
-  });
-  document.querySelectorAll('.mode-btn').forEach(b => {
-    b.addEventListener('click', () => switchMode(b.dataset.mode));
-  });
-  document.querySelectorAll('.sec-btn').forEach(b => {
-    b.addEventListener('click', () => switchSection(b.dataset.sec));
-  });
-  $('showRomaji').addEventListener('change', e => {
-    state.showRomaji = e.target.checked;
-    if (state.mode === 'flashcard') renderFlashcard();
-    else if (state.mode === 'quiz') renderQuizQuestion();
-  });
-  $('shuffleCards').addEventListener('change', e => {
-    state.shuffle = e.target.checked;
-    loadDeck();
-    if (state.mode === 'flashcard') renderFlashcard();
-  });
-  $('quizReverse').addEventListener('change', () => {
-    if (state.mode === 'quiz') startQuiz();
-  });
+  if (picked.kanji === q.kanji) {
+    state.quiz.score++;
+    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
+  } else {
+    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}</div>`;
+  }
+  renderStats();
+  setTimeout(() => { state.quiz.idx++; renderKanjiQuestion(); }, picked.kanji === q.kanji ? 800 : 2200);
+}
 
-  // Keyboard navigation
-  document.addEventListener('keydown', e => {
-    if (state.mode !== 'flashcard') return;
-    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextCard(); }
-    else if (e.key === 'ArrowLeft') prevCard();
-    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      e.preventDefault(); state.flipped = !state.flipped; renderFlashcard();
-    }
-  });
+// ── Vocab Quiz ──
+function startQuiz() {
+  const pool = getLessonWords(state.level, state.lesson);
+  if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 words for quiz.</div>`; return; }
+  const order = shuffleArr(pool);
+  state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked };
+  renderQuizQuestion();
+}
 
-  // Init
+function renderQuizQuestion() {
+  if (state.quiz.idx >= state.quiz.total) {
+    const pct = Math.round((state.quiz.score / state.quiz.total) * 100);
+    const msg = pct >= 90 ? '素晴らしい!' : pct >= 70 ? 'よくできました!' : pct >= 50 ? 'がんばって!' : 'もう一度!';
+    $('content').innerHTML = `
+      <div class="summary animate-in">
+        <div class="summary-title">${msg}</div>
+        <div class="summary-score">${pct}%</div>
+        <div class="summary-sub">${state.quiz.score} / ${state.quiz.total} correct</div>
+        <div class="btn-group">
+          <button class="btn primary" onclick="startQuiz()">Try again</button>
+          <button class="btn" onclick="nextLesson()">Next lesson →</button>
+        </div>
+      </div>`;
+    $('progressFill').style.width = '100%';
+    return;
+  }
+  const q = state.quiz.order[state.quiz.idx];
+  const pool = getLessonWords(state.level, state.lesson).filter(w => w.en !== q.en);
+  const distractors = shuffleArr(pool).slice(0, 3);
+  const opts = shuffleArr([q, ...distractors]);
+  state.quiz.options = opts; state.quiz.answered = false;
+  const reverse = state.quiz.reverse;
+  $('content').innerHTML = `
+    <div class="quiz-wrap animate-in">
+      <div class="quiz-label">${reverse ? 'What is the Japanese for:' : 'What does this mean?'}</div>
+      ${reverse
+        ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
+        : `<div class="quiz-word" style="font-size:3.5rem">${q.jp}</div>
+           <div class="quiz-sub">${q.reading}${state.showRomaji ? ' · <em>' + q.romaji + '</em>' : ''}</div>`}
+      <div class="quiz-options" id="qOpts">
+        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${
+          reverse ? o.jp + (state.showRomaji ? '<br><small style="color:var(--muted)">' + o.romaji + '</small>' : '') : o.en
+        }</button>`).join('')}
+      </div>
+      <div id="qFeedback"></div>
+    </div>`;
+  $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
+    btn.addEventListener('click', () => answerQuiz(parseInt(btn.dataset.i)))
+  );
+  renderStats();
+}
+
+function answerQuiz(i) {
+  if (state.quiz.answered) return;
+  state.quiz.answered = true;
+  const q = state.quiz.order[state.quiz.idx];
+  const picked = state.quiz.options[i];
+  const correctIdx = state.quiz.options.findIndex(o => o.en === q.en);
+  $('qOpts').querySelectorAll('.quiz-option').forEach((b, bi) => {
+    b.disabled = true;
+    if (bi === correctIdx) b.classList.add('correct');
+    else if (bi === i) b.classList.add('wrong');
+  });
+  if (picked.en === q.en) {
+    state.quiz.score++;
+    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
+  } else {
+    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}</div>`;
+  }
+  renderStats();
+  setTimeout(() => { state.quiz.idx++; renderQuizQuestion(); }, picked.en === q.en ? 800 : 2200);
+}
+
+// ── Kanji List ──
+function renderKanjiList() {
+  const groups = state.kanjiGroup === 'all' ? getKanjiGroups(state.level) : [state.kanjiGroup];
+  $('content').innerHTML = groups.map(g => {
+    const kanji = getKanjiByGroup(state.level, g);
+    return `
+      <div class="list-group-header">${g} — ${kanji.length} kanji</div>
+      <div class="list-table">
+        <div class="list-row krow header">
+          <div>漢字</div><div>くん</div><div>おん</div><div class="kimi">いみ</div><div>English</div>
+        </div>
+        ${kanji.map(k => `
+          <div class="list-row krow">
+            <div class="kchar">${k.kanji}</div>
+            <div class="muted">${k.kun || '—'}</div>
+            <div class="muted">${k.on || '—'}</div>
+            <div class="muted kimi">${k.imi}</div>
+            <div>${k.en}</div>
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+  renderStats();
+}
+
+// ── Vocab List ──
+function renderList() {
+  const data = VOCAB[state.level][state.lesson];
+  if (!data) { $('content').innerHTML = `<div class="empty">No data.</div>`; return; }
+  $('content').innerHTML = data.sections.map(s => `
+    <div class="list-group-header">${s.cat}</div>
+    <div class="list-table">
+      <div class="list-row vrow header">
+        <div>Japanese</div><div>Reading</div><div class="romaji-col">Romaji</div><div>English</div>
+      </div>
+      ${s.words.map(w => `
+        <div class="list-row vrow">
+          <div class="jp">${w.jp}</div>
+          <div class="muted">${w.reading}</div>
+          <div class="italic romaji-col">${w.romaji}</div>
+          <div>${w.en}</div>
+        </div>`).join('')}
+    </div>`).join('');
+  renderStats();
+}
+
+// ── Mode / section switching ──
+function switchMode(m) {
+  state.mode = m;
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  $('quizDirWrap').style.display = m === 'quiz' ? 'inline-flex' : 'none';
+  $('romajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
+  loadDeck();
+  if (state.section === 'kanji') {
+    if (m === 'flashcard') renderKanjiFlashcard();
+    else if (m === 'quiz') startKanjiQuiz();
+    else renderKanjiList();
+  } else {
+    if (m === 'flashcard') renderFlashcard();
+    else if (m === 'quiz') startQuiz();
+    else renderList();
+  }
+}
+
+function switchSection(sec) {
+  state.section = sec;
+  document.querySelectorAll('[data-sec]').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
+  state.kanjiGroup = 'all';
   buildLessonSelect();
-  switchMode('flashcard');
+  switchMode(state.mode);
+}
+
+// ── Event wiring ──
+$('level').addEventListener('change', e => {
+  state.level = e.target.value;
+  if (state.section === 'kanji') state.kanjiGroup = 'all';
+  else state.lesson = getLessons(state.level)[0];
+  buildLessonSelect();
+  switchMode(state.mode);
+});
+$('lesson').addEventListener('change', e => {
+  if (state.section === 'kanji') state.kanjiGroup = e.target.value;
+  else state.lesson = parseInt(e.target.value, 10);
+  switchMode(state.mode);
+});
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => switchMode(b.dataset.mode)));
+document.querySelectorAll('[data-sec]').forEach(b => b.addEventListener('click', () => switchSection(b.dataset.sec)));
+$('showRomaji').addEventListener('change', e => {
+  state.showRomaji = e.target.checked;
+  if (state.mode === 'flashcard') renderCurrentFlashcard();
+  else if (state.mode === 'quiz') { if (state.section === 'kanji') renderKanjiQuestion(); else renderQuizQuestion(); }
+});
+$('shuffleCards').addEventListener('change', () => {
+  state.shuffle = $('shuffleCards').checked;
+  loadDeck();
+  if (state.mode === 'flashcard') renderCurrentFlashcard();
+});
+$('quizReverse').addEventListener('change', () => {
+  if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
+});
+document.addEventListener('keydown', e => {
+  if (state.mode !== 'flashcard') return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextCard(); }
+  else if (e.key === 'ArrowLeft') prevCard();
+  else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault(); state.flipped = !state.flipped; renderCurrentFlashcard();
+  }
+});
+
+// Init
+buildLessonSelect();
+switchMode('flashcard');
 </script>
 </body>
 </html>
