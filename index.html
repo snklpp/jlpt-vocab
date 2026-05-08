@@ -318,6 +318,62 @@
 
   .empty { text-align: center; padding: 4rem 1rem; color: var(--muted); font-size: 0.9rem; }
 
+  /* ── Stats Panel ── */
+  .stats-panel {
+    display: flex; flex-direction: column; gap: 1.5rem;
+  }
+  .stats-header {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .stats-header h2 { font-size: 1.25rem; font-weight: 700; margin: 0; }
+  .stats-group {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);
+  }
+  .stats-group-title {
+    font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .stats-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;
+  }
+  .stat-item {
+    padding: 0.75rem; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--surface); display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .stat-item .term { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .stat-item .acc { font-size: 0.8rem; font-weight: 700; }
+  .stat-item .detail { font-size: 0.65rem; color: var(--muted); margin-top: 0.15rem; }
+
+  .tier-great { border-color: var(--good); background: var(--good-soft); color: var(--good); }
+  .tier-great .term { color: var(--good); }
+  
+  .tier-progress { border-color: #f39c12; background: #fdf5e6; color: #d68910; }
+  .tier-progress .term { color: #d68910; }
+  [data-theme="dark"] .tier-progress { background: #2a1d0c; border-color: #d68910; color: #f39c12; }
+  [data-theme="dark"] .tier-progress .term { color: #f39c12; }
+  
+  .tier-practice { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+  .tier-practice .term { color: var(--bad); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+    z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal-content {
+    background: var(--card); padding: 2rem; border-radius: var(--radius); width: 90%; max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.2s;
+    border: 1px solid var(--border); text-align: center;
+  }
+  .modal-overlay.active .modal-content { transform: translateY(0); }
+  .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--ink); }
+  .modal-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
+
   /* ── Animations ── */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -353,6 +409,7 @@
       <button class="chip active" data-mode="flashcard">Cards</button>
       <button class="chip" data-mode="quiz">Quiz</button>
       <button class="chip" data-mode="list">List</button>
+      <button class="chip" data-mode="stats">My Stats</button>
     </div>
   </div>
 
@@ -371,6 +428,28 @@
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="stats" id="stats"></div>
   <div id="content"></div>
+</div>
+
+<!-- Reset Modal -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal-content">
+    <div class="modal-title">Reset Progress</div>
+    <div class="modal-desc">Are you sure? This will erase saved scores permanently.</div>
+    <div style="text-align:left; margin-bottom:1.5rem; display:flex; flex-direction:column; gap:0.5rem; font-size:0.85rem">
+      <label class="checkbox-label">
+        <input type="radio" name="resetOpt" value="current" checked>
+        Reset current level only
+      </label>
+      <label class="checkbox-label">
+        <input type="radio" name="resetOpt" value="all">
+        Reset all levels
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideResetModal()">Cancel</button>
+      <button class="btn" style="background:var(--bad); color:#fff; border-color:var(--bad)" onclick="confirmReset()">Erase Data</button>
+    </div>
+  </div>
 </div>
 
 <script src="vocab.js?v=3"></script>
@@ -403,7 +482,19 @@ const state = {
   shuffle: false,
   quiz: { idx: 0, score: 0, answered: false, options: [], reverse: false, total: 0, order: [] },
   progress: loadProgress(),
+  stats: loadLevelStats('N5'),
 };
+
+function loadLevelStats(level) {
+  try { 
+    const data = JSON.parse(localStorage.getItem(`jlpt_stats_${level}`));
+    if (data && data.vocab && data.kanji) return data;
+  } catch {}
+  return { vocab: {}, kanji: {} };
+}
+function saveLevelStats() {
+  localStorage.setItem(`jlpt_stats_${state.level}`, JSON.stringify(state.stats));
+}
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem('jlpt_progress') || '{}'); }
@@ -663,12 +754,17 @@ function answerKanjiQuiz(i) {
     if (bi === correctIdx) b.classList.add('correct');
     else if (bi === i) b.classList.add('wrong');
   });
+  if (!state.stats.kanji[q.kanji]) state.stats.kanji[q.kanji] = { correct: 0, incorrect: 0 };
+  
   if (picked.kanji === q.kanji) {
     state.quiz.score++;
+    state.stats.kanji[q.kanji].correct++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
   } else {
+    state.stats.kanji[q.kanji].incorrect++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}</div>`;
   }
+  saveLevelStats();
   renderStats();
   setTimeout(() => { state.quiz.idx++; renderKanjiQuestion(); }, picked.kanji === q.kanji ? 800 : 2200);
 }
@@ -736,12 +832,17 @@ function answerQuiz(i) {
     if (bi === correctIdx) b.classList.add('correct');
     else if (bi === i) b.classList.add('wrong');
   });
+  if (!state.stats.vocab[q.jp]) state.stats.vocab[q.jp] = { correct: 0, incorrect: 0 };
+
   if (picked.en === q.en) {
     state.quiz.score++;
+    state.stats.vocab[q.jp].correct++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
   } else {
+    state.stats.vocab[q.jp].incorrect++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}</div>`;
   }
+  saveLevelStats();
   renderStats();
   setTimeout(() => { state.quiz.idx++; renderQuizQuestion(); }, picked.en === q.en ? 800 : 2200);
 }
@@ -791,6 +892,91 @@ function renderList() {
   renderStats();
 }
 
+// ── Stats / Performance Panel ──
+function renderStatsPanel() {
+  const vStats = Object.entries(state.stats.vocab).map(([word, s]) => ({ term: word, type: 'vocab', ...s }));
+  const kStats = Object.entries(state.stats.kanji).map(([kanji, s]) => ({ term: kanji, type: 'kanji', ...s }));
+  const allStats = [...vStats, ...kStats];
+  
+  if (allStats.length === 0) {
+    $('content').innerHTML = `
+      <div class="stats-panel animate-in">
+        <div class="stats-header">
+          <h2>My Stats (${state.level})</h2>
+        </div>
+        <div class="empty">No quiz data yet. Take a quiz to see your performance!</div>
+      </div>`;
+    $('stats').innerHTML = '';
+    $('progressFill').style.width = '0%';
+    return;
+  }
+
+  const withAcc = allStats.map(s => {
+    const total = s.correct + s.incorrect;
+    const acc = Math.round((s.correct / total) * 100);
+    return { ...s, total, acc };
+  });
+
+  const great = withAcc.filter(s => s.acc >= 80).sort((a,b) => b.total - a.total);
+  const progress = withAcc.filter(s => s.acc >= 50 && s.acc < 80).sort((a,b) => b.total - a.total);
+  const practice = withAcc.filter(s => s.acc < 50).sort((a,b) => b.total - a.total);
+
+  const renderGroup = (title, items, tierClass, icon) => {
+    if (items.length === 0) return '';
+    return `
+      <div class="stats-group">
+        <div class="stats-group-title">${icon} ${title} (${items.length})</div>
+        <div class="stats-list">
+          ${items.map(item => `
+            <div class="stat-item ${tierClass}">
+              <div class="term">${item.term}</div>
+              <div class="acc">${item.acc}% Correct</div>
+              <div class="detail">${item.correct} / ${item.total}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  };
+
+  $('content').innerHTML = `
+    <div class="stats-panel animate-in">
+      <div class="stats-header">
+        <h2>My Stats (${state.level})</h2>
+        <div class="btn-group">
+          <button class="btn" style="color:var(--bad);border-color:var(--bad)" onclick="showResetModal()">Reset Progress</button>
+        </div>
+      </div>
+      ${renderGroup('Great! Keep it up', great, 'tier-great', '✅')}
+      ${renderGroup('Making Progress', progress, 'tier-progress', '🔄')}
+      ${renderGroup('Needs Practice', practice, 'tier-practice', '❌')}
+    </div>
+  `;
+  $('stats').innerHTML = '';
+  $('progressFill').style.width = '0%';
+}
+
+let resetTarget = 'current';
+function showResetModal() {
+  $('resetModal').classList.add('active');
+}
+function hideResetModal() {
+  $('resetModal').classList.remove('active');
+}
+function confirmReset() {
+  const opt = document.querySelector('input[name="resetOpt"]:checked').value;
+  if (opt === 'all') {
+    ['N5','N4','N3','N2','N1'].forEach(l => localStorage.removeItem(`jlpt_stats_${l}`));
+    state.stats = { vocab: {}, kanji: {} };
+  } else {
+    localStorage.removeItem(`jlpt_stats_${state.level}`);
+    state.stats = { vocab: {}, kanji: {} };
+  }
+  saveLevelStats();
+  hideResetModal();
+  if (state.mode === 'stats') renderStatsPanel();
+}
+
 // ── Mode / section switching ──
 function switchMode(m) {
   state.mode = m;
@@ -798,6 +984,11 @@ function switchMode(m) {
   $('quizDirWrap').style.display = m === 'quiz' ? 'inline-flex' : 'none';
   $('romajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
   loadDeck();
+  
+  if (m === 'stats') {
+    renderStatsPanel();
+    return;
+  }
   if (state.section === 'kanji') {
     if (m === 'flashcard') renderKanjiFlashcard();
     else if (m === 'quiz') startKanjiQuiz();
@@ -820,6 +1011,7 @@ function switchSection(sec) {
 // ── Event wiring ──
 $('level').addEventListener('change', e => {
   state.level = e.target.value;
+  state.stats = loadLevelStats(state.level);
   if (state.section === 'kanji') state.kanjiGroup = 'all';
   else state.lesson = getLessons(state.level)[0];
   buildLessonSelect();
