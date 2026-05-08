@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JLPT Vocab Trainer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #fafaf7;
+    --card: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #6b7280;
+    --accent: #d63638;
+    --accent-light: #fde8e8;
+    --border: #e5e7eb;
+    --good: #16a34a;
+    --good-light: #dcfce7;
+    --bad: #dc2626;
+    --bad-light: #fee2e2;
+    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;
+  }
+  h1 {
+    font-size: 1.4rem; font-weight: 700;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  h1 .accent { color: var(--accent); }
+
+  /* Top controls */
+  .controls {
+    display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+  }
+  select, button {
+    font: inherit; padding: 0.5rem 0.85rem; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--ink); cursor: pointer; transition: all 0.15s;
+  }
+  select:hover, button:hover { border-color: var(--ink); }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  button.primary:hover { opacity: 0.85; }
+  button.danger { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Mode tabs */
+  .modes {
+    display: flex; gap: 0.25rem; margin-bottom: 1rem;
+    background: var(--card); padding: 0.25rem; border-radius: 10px;
+    border: 1px solid var(--border); width: fit-content;
+  }
+  .mode-btn {
+    border: none; background: transparent; padding: 0.5rem 1rem;
+    border-radius: 7px; font-weight: 500; color: var(--muted);
+  }
+  .mode-btn.active { background: var(--ink); color: #fff; }
+
+  /* Stats bar */
+  .stats {
+    display: flex; gap: 1rem; align-items: center; margin-bottom: 1.25rem;
+    font-size: 0.9rem; color: var(--muted); flex-wrap: wrap;
+  }
+  .stats strong { color: var(--ink); font-weight: 600; }
+  .progress-bar {
+    flex: 1; min-width: 120px; height: 6px; background: var(--border);
+    border-radius: 99px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--accent); transition: width 0.3s;
+  }
+
+  /* Card */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; box-shadow: var(--shadow);
+    padding: 2.5rem 1.5rem; min-height: 280px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; cursor: pointer; user-select: none;
+    transition: transform 0.15s;
+  }
+  .card:active { transform: scale(0.99); }
+  .card .cat {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--muted); margin-bottom: 1rem;
+  }
+  .card .jp {
+    font-size: 3rem; font-weight: 600; margin-bottom: 0.5rem;
+    line-height: 1.2; word-break: keep-all;
+  }
+  .card .reading {
+    font-size: 1.25rem; color: var(--muted); margin-bottom: 0.25rem;
+  }
+  .card .romaji {
+    font-size: 1rem; color: var(--muted); font-style: italic; margin-bottom: 1rem;
+  }
+  .card .en {
+    font-size: 1.5rem; color: var(--accent); font-weight: 500; margin-top: 0.5rem;
+  }
+  .card .hint {
+    margin-top: 1.5rem; font-size: 0.8rem; color: var(--muted);
+  }
+
+  /* Card actions */
+  .card-actions {
+    display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: center;
+    flex-wrap: wrap;
+  }
+  .card-actions button { min-width: 90px; }
+
+  /* Quiz mode */
+  .quiz-question {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; box-shadow: var(--shadow);
+    padding: 2rem 1.5rem; text-align: center;
+  }
+  .quiz-prompt {
+    font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .quiz-word { font-size: 2.5rem; font-weight: 600; margin-bottom: 0.4rem; }
+  .quiz-reading { font-size: 1rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .quiz-options {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+    max-width: 600px; margin: 0 auto;
+  }
+  @media (max-width: 480px) { .quiz-options { grid-template-columns: 1fr; } }
+  .quiz-option {
+    text-align: left; padding: 0.85rem 1rem; font-size: 0.95rem;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+    transition: all 0.15s;
+  }
+  .quiz-option:hover:not(:disabled) { border-color: var(--ink); }
+  .quiz-option.correct { background: var(--good-light); border-color: var(--good); color: var(--good); font-weight: 600; }
+  .quiz-option.wrong { background: var(--bad-light); border-color: var(--bad); color: var(--bad); }
+  .quiz-option:disabled { cursor: default; }
+
+  .quiz-feedback {
+    margin-top: 1.25rem; padding: 0.75rem 1rem; border-radius: 8px;
+    font-size: 0.9rem; text-align: center;
+  }
+  .quiz-feedback.good { background: var(--good-light); color: var(--good); }
+  .quiz-feedback.bad { background: var(--bad-light); color: var(--bad); }
+
+  /* List view */
+  .list-table {
+    width: 100%; background: var(--card); border-radius: 12px;
+    border: 1px solid var(--border); overflow: hidden;
+  }
+  .list-row {
+    display: grid; grid-template-columns: 1.4fr 1.2fr 1fr 1.4fr;
+    gap: 1rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border);
+    font-size: 0.95rem; align-items: center;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row.header {
+    background: #f3f4f6; font-weight: 600; font-size: 0.8rem;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  }
+  .list-row .jp { font-weight: 600; font-size: 1.05rem; }
+  .list-row .reading { color: var(--muted); }
+  .list-row .romaji { color: var(--muted); font-style: italic; font-size: 0.85rem; }
+  @media (max-width: 600px) {
+    .list-row { grid-template-columns: 1fr 1fr; }
+    .list-row .romaji { display: none; }
+    .list-row.header .romaji { display: none; }
+  }
+
+  /* Section labels in list */
+  .section-label {
+    margin: 1.25rem 0 0.5rem; font-size: 0.85rem; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* Bottom nav */
+  .nav {
+    display: flex; gap: 0.5rem; margin-top: 1.25rem; justify-content: center;
+    align-items: center;
+  }
+  .nav .counter { font-size: 0.9rem; color: var(--muted); min-width: 80px; text-align: center; }
+
+  /* Final summary */
+  .summary {
+    background: var(--card); border-radius: 16px; padding: 2.5rem 1.5rem;
+    text-align: center; box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .summary .score {
+    font-size: 3rem; font-weight: 700; color: var(--accent); margin: 0.5rem 0;
+  }
+  .summary p { color: var(--muted); margin-bottom: 1.25rem; }
+
+  .empty {
+    text-align: center; padding: 3rem 1rem; color: var(--muted);
+  }
+
+  /* Toggle for romaji */
+  .options-bar {
+    display: flex; gap: 1rem; align-items: center;
+    margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted);
+    flex-wrap: wrap;
+  }
+  .checkbox-label {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    cursor: pointer; user-select: none;
+  }
+  .checkbox-label input { cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>JLPT <span class="accent">語彙</span> Trainer</h1>
+      <div class="controls">
+        <select id="level">
+          <option value="N5">N5</option>
+          <option value="N4">N4</option>
+        </select>
+        <select id="lesson"></select>
+      </div>
+    </header>
+
+    <div class="modes">
+      <button class="mode-btn active" data-mode="flashcard">Flashcards</button>
+      <button class="mode-btn" data-mode="quiz">Quiz</button>
+      <button class="mode-btn" data-mode="list">List</button>
+    </div>
+
+    <div class="options-bar">
+      <label class="checkbox-label">
+        <input type="checkbox" id="showRomaji" checked> Show romaji
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="shuffleCards"> Shuffle
+      </label>
+      <label class="checkbox-label" id="quizDirWrap" style="display:none">
+        <input type="checkbox" id="quizReverse"> EN → JP
+      </label>
+    </div>
+
+    <div class="stats" id="stats"></div>
+    <div id="content"></div>
+  </div>
+
+<script src="vocab.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const state = {
+    level: 'N5',
+    lesson: 1,
+    mode: 'flashcard',
+    idx: 0,
+    flipped: false,
+    deck: [],
+    showRomaji: true,
+    shuffle: false,
+    // quiz
+    quiz: { idx: 0, score: 0, answered: false, options: [], reverse: false, total: 0 },
+    progress: loadProgress(),
+  };
+
+  function loadProgress() {
+    try { return JSON.parse(localStorage.getItem('jlpt_progress') || '{}'); }
+    catch { return {}; }
+  }
+  function saveProgress() {
+    localStorage.setItem('jlpt_progress', JSON.stringify(state.progress));
+  }
+  function progKey(level, lesson) { return `${level}_${lesson}`; }
+
+  function shuffleArr(a) {
+    const arr = [...a];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function buildLessonSelect() {
+    const lessons = getLessons(state.level);
+    $('lesson').innerHTML = lessons.map(n => {
+      const title = getLessonTitle(state.level, n);
+      const p = state.progress[progKey(state.level, n)];
+      const tick = p?.completed ? ' ✓' : '';
+      return `<option value="${n}">Lesson ${n}: ${title}${tick}</option>`;
+    }).join('');
+    $('lesson').value = state.lesson;
+  }
+
+  function loadDeck() {
+    let words = getLessonWords(state.level, state.lesson);
+    if (state.shuffle) words = shuffleArr(words);
+    state.deck = words;
+    state.idx = 0;
+    state.flipped = false;
+  }
+
+  function renderStats() {
+    const total = state.deck.length;
+    if (state.mode === 'list') {
+      $('stats').innerHTML = `<span><strong>${total}</strong> words in this lesson</span>`;
+      return;
+    }
+    if (state.mode === 'flashcard') {
+      const pct = total ? Math.round(((state.idx) / total) * 100) : 0;
+      $('stats').innerHTML = `
+        <span>Card <strong>${Math.min(state.idx + 1, total)}</strong> of <strong>${total}</strong></span>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      `;
+      return;
+    }
+    if (state.mode === 'quiz') {
+      const pct = state.quiz.total ? Math.round((state.quiz.idx / state.quiz.total) * 100) : 0;
+      $('stats').innerHTML = `
+        <span>Question <strong>${Math.min(state.quiz.idx + 1, state.quiz.total)}</strong> of <strong>${state.quiz.total}</strong></span>
+        <span>Score: <strong>${state.quiz.score}</strong></span>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      `;
+    }
+  }
+
+  function renderFlashcard() {
+    if (state.deck.length === 0) {
+      $('content').innerHTML = `<div class="empty">No words in this lesson.</div>`;
+      return;
+    }
+    if (state.idx >= state.deck.length) {
+      const key = progKey(state.level, state.lesson);
+      state.progress[key] = { ...(state.progress[key] || {}), completed: true, lastReviewed: Date.now() };
+      saveProgress();
+      buildLessonSelect();
+      $('content').innerHTML = `
+        <div class="summary">
+          <p>Lesson complete!</p>
+          <div class="score">✓</div>
+          <p>You reviewed all ${state.deck.length} words.</p>
+          <div class="card-actions">
+            <button class="primary" onclick="restartDeck()">Review again</button>
+            <button onclick="nextLesson()">Next lesson →</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    const w = state.deck[state.idx];
+    const romajiHTML = state.showRomaji ? `<div class="romaji">${w.romaji}</div>` : '';
+    const front = `
+      <div class="cat">${w.cat}</div>
+      <div class="jp">${w.jp}</div>
+      ${state.flipped ? `<div class="reading">${w.reading}</div>${romajiHTML}<div class="en">${w.en}</div>` : `<div class="hint">Tap to reveal</div>`}
+    `;
+    $('content').innerHTML = `
+      <div class="card" id="flashcard">${front}</div>
+      <div class="nav">
+        <button onclick="prevCard()">← Prev</button>
+        <div class="counter">${state.idx + 1} / ${state.deck.length}</div>
+        <button class="primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Show →'}</button>
+      </div>
+    `;
+    $('flashcard').addEventListener('click', () => { state.flipped = !state.flipped; renderFlashcard(); });
+    renderStats();
+  }
+
+  function prevCard() {
+    if (state.idx > 0) { state.idx--; state.flipped = false; renderFlashcard(); }
+  }
+  function nextCard() {
+    if (!state.flipped) { state.flipped = true; renderFlashcard(); return; }
+    state.idx++; state.flipped = false; renderFlashcard();
+  }
+  function restartDeck() {
+    loadDeck();
+    if (state.mode === 'flashcard') renderFlashcard();
+    else if (state.mode === 'quiz') startQuiz();
+  }
+  function nextLesson() {
+    const lessons = getLessons(state.level);
+    const i = lessons.indexOf(state.lesson);
+    if (i < lessons.length - 1) {
+      state.lesson = lessons[i + 1];
+      $('lesson').value = state.lesson;
+      switchMode(state.mode);
+    } else {
+      restartDeck();
+    }
+  }
+
+  // Quiz
+  function startQuiz() {
+    const pool = getLessonWords(state.level, state.lesson);
+    if (pool.length < 4) {
+      $('content').innerHTML = `<div class="empty">Need at least 4 words for quiz mode.</div>`;
+      return;
+    }
+    const order = shuffleArr(pool);
+    state.quiz = {
+      idx: 0, score: 0, answered: false, total: order.length, order,
+      reverse: $('quizReverse').checked,
+    };
+    renderQuizQuestion();
+  }
+
+  function renderQuizQuestion() {
+    if (state.quiz.idx >= state.quiz.total) {
+      const pct = Math.round((state.quiz.score / state.quiz.total) * 100);
+      const msg = pct >= 90 ? '素晴らしい! Excellent!' : pct >= 70 ? 'よくできました! Great job!' : pct >= 50 ? 'がんばって! Keep practicing.' : 'もう一度! Try again.';
+      const key = progKey(state.level, state.lesson);
+      const prev = state.progress[key] || {};
+      if (pct > (prev.bestQuiz || 0)) {
+        state.progress[key] = { ...prev, bestQuiz: pct, lastReviewed: Date.now(), completed: pct >= 70 ? true : prev.completed };
+        saveProgress();
+        buildLessonSelect();
+      }
+      $('content').innerHTML = `
+        <div class="summary">
+          <p>${msg}</p>
+          <div class="score">${pct}%</div>
+          <p>${state.quiz.score} / ${state.quiz.total} correct</p>
+          <div class="card-actions">
+            <button class="primary" onclick="startQuiz()">Try again</button>
+            <button onclick="nextLesson()">Next lesson →</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    const q = state.quiz.order[state.quiz.idx];
+    const pool = getLessonWords(state.level, state.lesson).filter(w => w.en !== q.en);
+    const distractors = shuffleArr(pool).slice(0, 3);
+    const opts = shuffleArr([q, ...distractors]);
+    state.quiz.options = opts;
+    state.quiz.answered = false;
+
+    const reverse = state.quiz.reverse;
+    const promptText = reverse ? 'What is the Japanese word for:' : 'What does this mean?';
+    const wordHTML = reverse
+      ? `<div class="quiz-word">${q.en}</div>`
+      : `<div class="quiz-word">${q.jp}</div><div class="quiz-reading">${q.reading}${state.showRomaji ? ' · <em>' + q.romaji + '</em>' : ''}</div>`;
+
+    $('content').innerHTML = `
+      <div class="quiz-question">
+        <div class="quiz-prompt">${promptText}</div>
+        ${wordHTML}
+        <div class="quiz-options" id="qOpts">
+          ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${reverse ? o.jp + (state.showRomaji ? ' (' + o.romaji + ')' : '') : o.en}</button>`).join('')}
+        </div>
+        <div id="qFeedback"></div>
+      </div>
+    `;
+    $('qOpts').querySelectorAll('.quiz-option').forEach(btn => {
+      btn.addEventListener('click', () => answerQuiz(parseInt(btn.dataset.i, 10)));
+    });
+    renderStats();
+  }
+
+  function answerQuiz(i) {
+    if (state.quiz.answered) return;
+    state.quiz.answered = true;
+    const q = state.quiz.order[state.quiz.idx];
+    const picked = state.quiz.options[i];
+    const correctIdx = state.quiz.options.findIndex(o => o.en === q.en);
+    const buttons = $('qOpts').querySelectorAll('.quiz-option');
+    buttons.forEach((b, bi) => {
+      b.disabled = true;
+      if (bi === correctIdx) b.classList.add('correct');
+      else if (bi === i) b.classList.add('wrong');
+    });
+    if (picked.en === q.en) {
+      state.quiz.score++;
+      $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
+    } else {
+      $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct answer: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}</div>`;
+    }
+    renderStats();
+    setTimeout(() => {
+      state.quiz.idx++;
+      renderQuizQuestion();
+    }, picked.en === q.en ? 800 : 2000);
+  }
+
+  // List view
+  function renderList() {
+    const data = VOCAB[state.level][state.lesson];
+    if (!data) { $('content').innerHTML = `<div class="empty">No data.</div>`; return; }
+    const sectionsHTML = data.sections.map(s => `
+      <div class="section-label">${s.cat}</div>
+      <div class="list-table">
+        <div class="list-row header">
+          <div>Japanese</div><div>Reading</div><div>Romaji</div><div>English</div>
+        </div>
+        ${s.words.map(w => `
+          <div class="list-row">
+            <div class="jp">${w.jp}</div>
+            <div class="reading">${w.reading}</div>
+            <div class="romaji">${w.romaji}</div>
+            <div>${w.en}</div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+    $('content').innerHTML = sectionsHTML;
+    renderStats();
+  }
+
+  // Mode switching
+  function switchMode(m) {
+    state.mode = m;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+    $('quizDirWrap').style.display = (m === 'quiz') ? 'inline-flex' : 'none';
+    loadDeck();
+    if (m === 'flashcard') renderFlashcard();
+    else if (m === 'quiz') startQuiz();
+    else renderList();
+  }
+
+  // Wire up
+  $('level').addEventListener('change', e => {
+    state.level = e.target.value;
+    state.lesson = getLessons(state.level)[0];
+    buildLessonSelect();
+    switchMode(state.mode);
+  });
+  $('lesson').addEventListener('change', e => {
+    state.lesson = parseInt(e.target.value, 10);
+    switchMode(state.mode);
+  });
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.addEventListener('click', () => switchMode(b.dataset.mode));
+  });
+  $('showRomaji').addEventListener('change', e => {
+    state.showRomaji = e.target.checked;
+    if (state.mode === 'flashcard') renderFlashcard();
+    else if (state.mode === 'quiz') renderQuizQuestion();
+  });
+  $('shuffleCards').addEventListener('change', e => {
+    state.shuffle = e.target.checked;
+    loadDeck();
+    if (state.mode === 'flashcard') renderFlashcard();
+  });
+  $('quizReverse').addEventListener('change', () => {
+    if (state.mode === 'quiz') startQuiz();
+  });
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (state.mode !== 'flashcard') return;
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextCard(); }
+    else if (e.key === 'ArrowLeft') prevCard();
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault(); state.flipped = !state.flipped; renderFlashcard();
+    }
+  });
+
+  // Init
+  buildLessonSelect();
+  switchMode('flashcard');
+</script>
+</body>
+</html>
