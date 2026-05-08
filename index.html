@@ -142,23 +142,24 @@
 
   /* ── Flashcard 3D flip ── */
   .flashcard-scene {
-    perspective: 1000px; margin-bottom: 1rem;
+    perspective: 1200px; margin-bottom: 1rem;
   }
   .flashcard-inner {
-    position: relative; width: 100%; min-height: 340px;
+    position: relative; width: 100%;
     transform-style: preserve-3d;
     transition: transform 0.55s var(--ease);
     cursor: pointer;
+    display: grid;
   }
   .flashcard-inner.flipped { transform: rotateY(180deg); }
   .card-face {
-    position: absolute; inset: 0;
+    grid-area: 1 / 1;
     backface-visibility: hidden; -webkit-backface-visibility: hidden;
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--radius); box-shadow: var(--shadow);
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; padding: 2.5rem 2rem; text-align: center;
-    min-height: 340px;
+    min-height: 300px;
   }
   .card-face.back { transform: rotateY(180deg); }
 
@@ -204,7 +205,7 @@
     margin-top: 1.25rem; padding: 0.75rem 1rem;
     background: var(--surface); border-radius: 10px;
     border-left: 3px solid var(--accent);
-    max-width: 360px; text-align: left; line-height: 1.65;
+    width: 100%; max-width: 400px; text-align: left; line-height: 1.65;
     font-size: 0.8rem; color: var(--muted);
   }
   .kanji-mnemonic-label {
@@ -215,6 +216,7 @@
   /* Card nav */
   .card-nav {
     display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+    margin-top: 1rem;
   }
   .btn {
     font: inherit; font-size: 0.8rem; font-weight: 700;
