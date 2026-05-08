@@ -471,20 +471,41 @@ $('themeBtn').addEventListener('click', () => {
 });
 
 // ── State ──
+function loadSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem('jlpt_session') || '{}');
+    return session;
+  } catch { return {}; }
+}
+function saveSession() {
+  const session = {
+    level: state.level,
+    section: state.section,
+    lesson: state.lesson,
+    kanjiGroup: state.kanjiGroup,
+    mode: state.mode,
+    showRomaji: state.showRomaji,
+    shuffle: state.shuffle,
+    quizReverse: state.quiz.reverse
+  };
+  localStorage.setItem('jlpt_session', JSON.stringify(session));
+}
+
+const session = loadSession();
 const state = {
-  section: 'vocab',
-  level: 'N5',
-  lesson: 1,
-  kanjiGroup: 'all',
-  mode: 'flashcard',
+  section: session.section || 'vocab',
+  level: session.level || 'N5',
+  lesson: session.lesson || 1,
+  kanjiGroup: session.kanjiGroup || 'all',
+  mode: session.mode || 'flashcard',
   idx: 0,
   flipped: false,
   deck: [],
-  showRomaji: true,
-  shuffle: false,
-  quiz: { idx: 0, score: 0, answered: false, options: [], reverse: false, total: 0, order: [] },
+  showRomaji: session.showRomaji !== undefined ? session.showRomaji : true,
+  shuffle: session.shuffle || false,
+  quiz: { idx: 0, score: 0, answered: false, options: [], reverse: session.quizReverse || false, total: 0, order: [] },
   progress: loadProgress(),
-  stats: loadLevelStats('N5'),
+  stats: loadLevelStats(session.level || 'N5'),
 };
 
 function loadLevelStats(level) {
@@ -534,16 +555,36 @@ function buildLessonSelect() {
 }
 
 function loadDeck() {
+  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  const p = state.progress[key] || {};
+
   if (state.section === 'kanji') {
     let words = getKanjiByGroup(state.level, state.kanjiGroup);
-    if (state.shuffle) words = shuffleArr(words);
+    if (state.shuffle) {
+      if (p.shuffledDeck && p.shuffledDeck.length === words.length) {
+        words = p.shuffledDeck;
+      } else {
+        words = shuffleArr(words);
+        state.progress[key] = { ...p, shuffledDeck: words };
+        saveProgress();
+      }
+    }
     state.deck = words;
   } else {
     let words = getLessonWords(state.level, state.lesson);
-    if (state.shuffle) words = shuffleArr(words);
+    if (state.shuffle) {
+      if (p.shuffledDeck && p.shuffledDeck.length === words.length) {
+        words = p.shuffledDeck;
+      } else {
+        words = shuffleArr(words);
+        state.progress[key] = { ...p, shuffledDeck: words };
+        saveProgress();
+      }
+    }
     state.deck = words;
   }
-  state.idx = 0; state.flipped = false;
+  state.idx = p.cardIdx || 0;
+  state.flipped = false;
 }
 
 // ── Stats / progress bar ──
@@ -676,13 +717,30 @@ function renderCurrentFlashcard() {
   else renderFlashcard();
 }
 function prevCard() {
-  if (state.idx > 0) { state.idx--; state.flipped = false; renderCurrentFlashcard(); }
+  if (state.idx > 0) { 
+    state.idx--; state.flipped = false; 
+    const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+    state.progress[key] = { ...(state.progress[key] || {}), cardIdx: state.idx };
+    saveProgress();
+    renderCurrentFlashcard(); 
+  }
 }
 function nextCard() {
   if (!state.flipped) { state.flipped = true; renderCurrentFlashcard(); return; }
-  state.idx++; state.flipped = false; renderCurrentFlashcard();
+  state.idx++; state.flipped = false; 
+  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  state.progress[key] = { ...(state.progress[key] || {}), cardIdx: state.idx };
+  saveProgress();
+  renderCurrentFlashcard();
 }
 function restartDeck() {
+  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  if (state.progress[key]) {
+    delete state.progress[key].cardIdx;
+    delete state.progress[key].shuffledDeck;
+    delete state.progress[key].quizState;
+    saveProgress();
+  }
   loadDeck();
   if (state.mode === 'flashcard') renderCurrentFlashcard();
   else if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
@@ -696,10 +754,18 @@ function nextLesson() {
 
 // ── Kanji Quiz ──
 function startKanjiQuiz() {
-  const pool = getKanjiByGroup(state.level, state.kanjiGroup);
-  if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 kanji for quiz.</div>`; return; }
-  const order = shuffleArr(pool);
-  state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked };
+  const key = `kanji_${state.level}_${state.kanjiGroup}`;
+  const p = state.progress[key] || {};
+  if (p.quizState && p.quizState.idx < p.quizState.total && p.quizState.reverse === $('quizReverse').checked) {
+    state.quiz = p.quizState;
+  } else {
+    const pool = getKanjiByGroup(state.level, state.kanjiGroup);
+    if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 kanji for quiz.</div>`; return; }
+    const order = shuffleArr(pool);
+    state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked, options: [] };
+    state.progress[key] = { ...p, quizState: state.quiz };
+    saveProgress();
+  }
   renderKanjiQuestion();
 }
 
@@ -718,11 +784,17 @@ function renderKanjiQuestion() {
     return;
   }
   const q = state.quiz.order[state.quiz.idx];
-  const allKanji = KANJI[state.level];
-  const distractors = shuffleArr(allKanji.filter(k => k.en !== q.en)).slice(0, 3);
-  const opts = shuffleArr([q, ...distractors]);
-  state.quiz.options = opts; state.quiz.answered = false;
+  if (state.quiz.options && state.quiz.options.length > 0) {
+    // Resume with existing options
+  } else {
+    const allKanji = KANJI[state.level];
+    const distractors = shuffleArr(allKanji.filter(k => k.en !== q.en)).slice(0, 3);
+    const opts = shuffleArr([q, ...distractors]);
+    state.quiz.options = opts;
+  }
+  state.quiz.answered = false;
   const reverse = state.quiz.reverse;
+  const opts = state.quiz.options;
   $('content').innerHTML = `
     <div class="quiz-wrap animate-in">
       <div class="quiz-label">${reverse ? 'Which kanji means:' : 'What does this kanji mean?'}</div>
@@ -767,16 +839,33 @@ function answerKanjiQuiz(i) {
     $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}</div>`;
   }
   saveLevelStats();
+  const key = `kanji_${state.level}_${state.kanjiGroup}`;
+  state.progress[key].quizState = state.quiz;
+  saveProgress();
   renderStats();
-  setTimeout(() => { state.quiz.idx++; renderKanjiQuestion(); }, picked.kanji === q.kanji ? 800 : 2200);
+  setTimeout(() => { 
+    state.quiz.idx++; 
+    state.quiz.options = []; 
+    state.progress[key].quizState = state.quiz;
+    saveProgress();
+    renderKanjiQuestion(); 
+  }, picked.kanji === q.kanji ? 800 : 2200);
 }
 
 // ── Vocab Quiz ──
 function startQuiz() {
-  const pool = getLessonWords(state.level, state.lesson);
-  if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 words for quiz.</div>`; return; }
-  const order = shuffleArr(pool);
-  state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked };
+  const key = progKey(state.level, state.lesson);
+  const p = state.progress[key] || {};
+  if (p.quizState && p.quizState.idx < p.quizState.total && p.quizState.reverse === $('quizReverse').checked) {
+    state.quiz = p.quizState;
+  } else {
+    const pool = getLessonWords(state.level, state.lesson);
+    if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 words for quiz.</div>`; return; }
+    const order = shuffleArr(pool);
+    state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked, options: [] };
+    state.progress[key] = { ...p, quizState: state.quiz };
+    saveProgress();
+  }
   renderQuizQuestion();
 }
 
@@ -798,11 +887,17 @@ function renderQuizQuestion() {
     return;
   }
   const q = state.quiz.order[state.quiz.idx];
-  const pool = getLessonWords(state.level, state.lesson).filter(w => w.en !== q.en);
-  const distractors = shuffleArr(pool).slice(0, 3);
-  const opts = shuffleArr([q, ...distractors]);
-  state.quiz.options = opts; state.quiz.answered = false;
+  if (state.quiz.options && state.quiz.options.length > 0) {
+    // Resume
+  } else {
+    const pool = getLessonWords(state.level, state.lesson).filter(w => w.en !== q.en);
+    const distractors = shuffleArr(pool).slice(0, 3);
+    const opts = shuffleArr([q, ...distractors]);
+    state.quiz.options = opts;
+  }
+  state.quiz.answered = false;
   const reverse = state.quiz.reverse;
+  const opts = state.quiz.options;
   $('content').innerHTML = `
     <div class="quiz-wrap animate-in">
       <div class="quiz-label">${reverse ? 'What is the Japanese for:' : 'What does this mean?'}</div>
@@ -845,8 +940,17 @@ function answerQuiz(i) {
     $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}</div>`;
   }
   saveLevelStats();
+  const key = progKey(state.level, state.lesson);
+  state.progress[key].quizState = state.quiz;
+  saveProgress();
   renderStats();
-  setTimeout(() => { state.quiz.idx++; renderQuizQuestion(); }, picked.en === q.en ? 800 : 2200);
+  setTimeout(() => { 
+    state.quiz.idx++; 
+    state.quiz.options = [];
+    state.progress[key].quizState = state.quiz;
+    saveProgress();
+    renderQuizQuestion(); 
+  }, picked.en === q.en ? 800 : 2200);
 }
 
 // ── Kanji List ──
@@ -986,6 +1090,7 @@ function switchMode(m) {
   $('quizDirWrap').style.display = m === 'quiz' ? 'inline-flex' : 'none';
   $('romajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
   loadDeck();
+  saveSession();
   
   if (m === 'stats') {
     renderStatsPanel();
@@ -1008,6 +1113,7 @@ function switchSection(sec) {
   state.kanjiGroup = 'all';
   buildLessonSelect();
   switchMode(state.mode);
+  saveSession();
 }
 
 // ── Event wiring ──
@@ -1018,11 +1124,13 @@ $('level').addEventListener('change', e => {
   else state.lesson = getLessons(state.level)[0];
   buildLessonSelect();
   switchMode(state.mode);
+  saveSession();
 });
 $('lesson').addEventListener('change', e => {
   if (state.section === 'kanji') state.kanjiGroup = e.target.value;
   else state.lesson = parseInt(e.target.value, 10);
   switchMode(state.mode);
+  saveSession();
 });
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => switchMode(b.dataset.mode)));
 document.querySelectorAll('[data-sec]').forEach(b => b.addEventListener('click', () => switchSection(b.dataset.sec)));
@@ -1030,14 +1138,22 @@ $('showRomaji').addEventListener('change', e => {
   state.showRomaji = e.target.checked;
   if (state.mode === 'flashcard') renderCurrentFlashcard();
   else if (state.mode === 'quiz') { if (state.section === 'kanji') renderKanjiQuestion(); else renderQuizQuestion(); }
+  saveSession();
 });
 $('shuffleCards').addEventListener('change', () => {
   state.shuffle = $('shuffleCards').checked;
+  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  if (state.progress[key]) {
+     delete state.progress[key].shuffledDeck;
+     delete state.progress[key].cardIdx;
+  }
   loadDeck();
   if (state.mode === 'flashcard') renderCurrentFlashcard();
+  saveSession();
 });
 $('quizReverse').addEventListener('change', () => {
   if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
+  saveSession();
 });
 document.addEventListener('keydown', e => {
   if (state.mode !== 'flashcard') return;
@@ -1049,8 +1165,12 @@ document.addEventListener('keydown', e => {
 });
 
 // Init
+$('level').value = state.level;
+$('showRomaji').checked = state.showRomaji;
+$('shuffleCards').checked = state.shuffle;
+$('quizReverse').checked = state.quiz.reverse;
 buildLessonSelect();
-switchMode('flashcard');
+switchMode(state.mode);
 </script>
 </body>
 </html>
