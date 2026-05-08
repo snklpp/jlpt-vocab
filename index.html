@@ -64,7 +64,7 @@
     margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;
   }
   .logo {
-    font-size: 1rem; font-weight: 800; letter-spacing: -0.02em;
+    font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em;
     display: flex; align-items: center; gap: 0.5rem;
   }
   .logo-badge {
@@ -77,8 +77,8 @@
   /* ── Controls / Chips ── */
   .chip-group { display: flex; gap: 0.3rem; }
   .chip {
-    font: inherit; font-size: 0.78rem; font-weight: 600;
-    padding: 0.38rem 0.9rem; border-radius: 99px;
+    font: inherit; font-size: 0.85rem; font-weight: 600;
+    padding: 0.4rem 1rem; border-radius: 99px;
     border: 1.5px solid var(--border); background: transparent;
     color: var(--muted); cursor: pointer; letter-spacing: 0.01em;
     transition: all 0.18s var(--ease); white-space: nowrap;
@@ -87,14 +87,14 @@
   .chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
 
   select {
-    font: inherit; font-size: 0.78rem; font-weight: 600;
-    padding: 0.38rem 2rem 0.38rem 0.85rem; border-radius: 99px;
+    font: inherit; font-size: 0.85rem; font-weight: 600;
+    padding: 0.4rem 2.2rem 0.4rem 1rem; border-radius: 99px;
     border: 1.5px solid var(--border); background: var(--card);
     color: var(--ink); cursor: pointer;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a8a8a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 0.7rem center;
+    background-position: right 0.8rem center;
     transition: border-color 0.15s;
   }
   select:hover { border-color: var(--ink); }
@@ -167,13 +167,13 @@
 
   /* Vocab card content */
   .card-cat {
-    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
     color: var(--muted); margin-bottom: 1.25rem; font-weight: 600;
   }
-  .card-jp { font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.35rem; }
-  .card-reading { font-size: 1.15rem; color: var(--muted); margin-bottom: 0.1rem; }
-  .card-romaji { font-size: 0.85rem; color: var(--muted); font-style: italic; margin-bottom: 0.85rem; }
-  .card-en { font-size: 1.65rem; font-weight: 700; color: var(--accent); }
+  .card-jp { font-size: 3.8rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.35rem; }
+  .card-reading { font-size: 1.3rem; color: var(--muted); margin-bottom: 0.1rem; }
+  .card-romaji { font-size: 0.95rem; color: var(--muted); font-style: italic; margin-bottom: 0.85rem; }
+  .card-en { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
   .tap-hint {
     font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
     color: var(--muted); margin-top: 2rem; opacity: 0.7;
@@ -191,18 +191,18 @@
     font-weight: 700;
   }
   .kanji-char {
-    font-size: 6.5rem; font-weight: 700; line-height: 1;
+    font-size: 7rem; font-weight: 700; line-height: 1;
     margin-bottom: 0.25rem; letter-spacing: -0.02em;
   }
   .kanji-readings { display: flex; gap: 2.25rem; justify-content: center; margin-bottom: 0.6rem; }
   .kanji-reading-block { text-align: center; }
   .kanji-reading-label {
-    font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em;
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
     color: var(--muted); display: block; margin-bottom: 0.18rem; font-weight: 700;
   }
-  .kanji-reading-val { font-size: 1.15rem; font-weight: 500; }
-  .kanji-imi { font-size: 0.95rem; color: var(--muted); margin-bottom: 0.3rem; }
-  .kanji-en { font-size: 1.65rem; font-weight: 700; color: var(--accent); }
+  .kanji-reading-val { font-size: 1.3rem; font-weight: 500; }
+  .kanji-imi { font-size: 1.1rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .kanji-en { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
   .kanji-mnemonic {
     margin-top: 1.25rem; padding: 0.75rem 1rem;
     background: var(--surface); border-radius: 10px;
@@ -252,8 +252,8 @@
   }
   @media (max-width: 480px) { .quiz-options { grid-template-columns: 1fr; } }
   .quiz-option {
-    text-align: left; padding: 0.85rem 1.1rem; font-size: 0.88rem;
-    border: 1.5px solid var(--border); border-radius: 10px;
+    text-align: left; padding: 1rem 1.25rem; font-size: 1rem;
+    border: 1.5px solid var(--border); border-radius: 12px;
     background: var(--card); cursor: pointer;
     transition: all 0.15s var(--ease); font: inherit; color: var(--ink);
   }
@@ -262,8 +262,8 @@
   .quiz-option.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
   .quiz-option:disabled { cursor: default; }
   .quiz-feedback {
-    margin-top: 1rem; padding: 0.6rem 1rem; border-radius: 8px;
-    font-size: 0.82rem; animation: fadeIn 0.2s;
+    margin-top: 1rem; padding: 0.75rem 1.25rem; border-radius: 8px;
+    font-size: 0.95rem; animation: fadeIn 0.2s;
   }
   .quiz-feedback.good { background: var(--good-soft); color: var(--good); }
   .quiz-feedback.bad { background: var(--bad-soft); color: var(--bad); }
@@ -280,8 +280,8 @@
     border-radius: var(--radius); overflow: hidden; margin-bottom: 0.25rem;
   }
   .list-row {
-    display: grid; gap: 0.75rem; padding: 0.7rem 1.1rem;
-    border-bottom: 1px solid var(--border); font-size: 0.86rem; align-items: center;
+    display: grid; gap: 0.75rem; padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border); font-size: 0.95rem; align-items: center;
   }
   .list-row:last-child { border-bottom: none; }
   .list-row.header {
@@ -301,6 +301,25 @@
   @media (max-width: 600px) {
     .vrow { grid-template-columns: 1fr 1fr; }
     .list-row .romaji-col { display: none; }
+    
+    .container { padding-top: 1rem; }
+    header { margin-bottom: 1.5rem; }
+    .logo { font-size: 1.25rem; width: 100%; justify-content: center; margin-bottom: 1rem; }
+    .header-right { width: 100%; justify-content: center; gap: 0.75rem; }
+    
+    .chip { font-size: 0.9rem; padding: 0.5rem 1.1rem; }
+    select { font-size: 0.9rem; padding: 0.5rem 2.2rem 0.5rem 1rem; }
+    
+    .card-face { min-height: 320px; padding: 2rem 1.5rem; }
+    .card-jp { font-size: 3.2rem; }
+    .kanji-char { font-size: 5.5rem; }
+    
+    .quiz-word { font-size: 4rem; }
+    .quiz-word.text { font-size: 2rem; }
+    .quiz-option { font-size: 1.05rem; padding: 1.1rem 1.25rem; }
+    
+    .list-row { font-size: 1rem; padding: 1rem 0.75rem; }
+    .list-row .jp { font-size: 1.15rem; }
   }
 
   /* ── Summary ── */
