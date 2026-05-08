@@ -620,16 +620,20 @@
     renderStats();
   }
 
+  function renderCurrentFlashcard() {
+    if (state.section === 'kanji') renderKanjiFlashcard();
+    else renderFlashcard();
+  }
   function prevCard() {
-    if (state.idx > 0) { state.idx--; state.flipped = false; renderFlashcard(); }
+    if (state.idx > 0) { state.idx--; state.flipped = false; renderCurrentFlashcard(); }
   }
   function nextCard() {
-    if (!state.flipped) { state.flipped = true; renderFlashcard(); return; }
-    state.idx++; state.flipped = false; renderFlashcard();
+    if (!state.flipped) { state.flipped = true; renderCurrentFlashcard(); return; }
+    state.idx++; state.flipped = false; renderCurrentFlashcard();
   }
   function restartDeck() {
     loadDeck();
-    if (state.mode === 'flashcard') renderFlashcard();
+    if (state.mode === 'flashcard') renderCurrentFlashcard();
     else if (state.mode === 'quiz') startQuiz();
   }
   function nextLesson() {
