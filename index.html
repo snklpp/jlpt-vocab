@@ -232,6 +232,14 @@
     display: flex; align-items: center; justify-content: center; gap: 0.75rem;
     margin-top: 1rem;
   }
+  .bookmark-btn {
+    font-size: 1.2rem; background: none; border: none; cursor: pointer;
+    color: var(--muted); padding: 0.2rem 0.4rem; line-height: 1;
+    transition: color 0.15s, transform 0.15s;
+  }
+  .bookmark-btn:hover { color: var(--accent); transform: scale(1.2); }
+  .bookmark-btn.marked { color: var(--accent); }
+  .list-row .bookmark-btn { font-size: 1rem; }
   .btn {
     font: inherit; font-size: 0.8rem; font-weight: 700;
     padding: 0.5rem 1.3rem; border-radius: 99px;
@@ -300,8 +308,8 @@
     background: var(--surface); font-weight: 700; font-size: 0.65rem;
     text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
   }
-  .vrow { grid-template-columns: 1.5fr 1.2fr 0.9fr 1.4fr; }
-  .krow { grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr; }
+  .vrow { grid-template-columns: 1.5fr 1.2fr 0.9fr 1.4fr 2rem; }
+  .krow { grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr 2rem; }
   .list-row .kchar { font-size: 1.55rem; font-weight: 700; }
   .list-row .jp { font-weight: 700; font-size: 1.15rem; }
   .list-row .muted { color: var(--muted); }
@@ -616,6 +624,7 @@ const state = {
   fontScale: session.fontScale || 1,
   quiz: { idx: 0, score: 0, answered: false, options: [], reverse: session.quizReverse || false, total: 0, order: [] },
   progress: loadProgress(),
+  review: loadReview(),
   stats: loadLevelStats(session.level || 'N5'),
 };
 
@@ -637,6 +646,24 @@ function loadProgress() {
 function saveProgress() { localStorage.setItem('jlpt_progress', JSON.stringify(state.progress)); }
 function progKey(level, lesson) { return `${level}_${lesson}`; }
 
+function loadReview() {
+  try { return JSON.parse(localStorage.getItem('jlpt_review') || '{}'); }
+  catch { return {}; }
+}
+function saveReview() { localStorage.setItem('jlpt_review', JSON.stringify(state.review)); }
+function reviewList(type, level) { return state.review[type]?.[level] || []; }
+function reviewCount(type, level) { return reviewList(type, level).length; }
+function isInReview(type, level, key) { return reviewList(type, level).includes(key); }
+function toggleReview(type, level, key) {
+  if (!state.review[type]) state.review[type] = {};
+  if (!state.review[type][level]) state.review[type][level] = [];
+  const arr = state.review[type][level];
+  const idx = arr.indexOf(key);
+  if (idx === -1) arr.push(key); else arr.splice(idx, 1);
+  saveReview();
+  buildLessonSelect();
+}
+
 function getItemStats(term) {
   const statsSec = state.stats[state.section] || {};
   const s = statsSec[term] || { correct: 0, incorrect: 0 };
@@ -656,13 +683,18 @@ function shuffleArr(a) {
 function buildLessonSelect() {
   if (state.section === 'kanji') {
     const groups = getKanjiGroups(state.level);
-    const opts = [{ id: 'all', label: `All (${KANJI[state.level].length})` }]
+    const rc = reviewCount('kanji', state.level);
+    const reviewOpt = rc > 0 ? [{ id: '__review__', label: `★ Review (${rc})` }] : [];
+    const opts = reviewOpt
+      .concat([{ id: 'all', label: `All (${KANJI[state.level].length})` }])
       .concat(groups.map(g => ({ id: g, label: `${g} (${getKanjiGroupCount(state.level, g)})` })));
     $('lesson').innerHTML = opts.map(o => `<option value="${o.id}">${o.label}</option>`).join('');
     $('lesson').value = state.kanjiGroup;
   } else {
     const lessons = getLessons(state.level);
-    $('lesson').innerHTML = lessons.map(n => {
+    const rc = reviewCount('vocab', state.level);
+    const reviewOpt = rc > 0 ? `<option value="__review__">★ Review (${rc})</option>` : '';
+    $('lesson').innerHTML = reviewOpt + lessons.map(n => {
       const title = getLessonTitle(state.level, n);
       const p = state.progress[progKey(state.level, n)];
       return `<option value="${n}">L${n}: ${title}${p?.completed ? ' ✓' : ''}</option>`;
@@ -672,14 +704,23 @@ function buildLessonSelect() {
 }
 
 function loadDeck() {
-  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
-  const p = state.progress[key] || {};
   if (state.section === 'kanji') {
-    state.deck = getKanjiByGroup(state.level, state.kanjiGroup);
+    if (state.kanjiGroup === '__review__') {
+      const keys = reviewList('kanji', state.level);
+      state.deck = KANJI[state.level].filter(k => keys.includes(k.kanji));
+    } else {
+      state.deck = getKanjiByGroup(state.level, state.kanjiGroup);
+    }
   } else {
-    state.deck = getLessonWords(state.level, state.lesson);
+    if (state.lesson === '__review__') {
+      const keys = reviewList('vocab', state.level);
+      const all = getLessons(state.level).flatMap(n => getLessonWords(state.level, n));
+      state.deck = all.filter(w => keys.includes(w.jp));
+    } else {
+      state.deck = getLessonWords(state.level, state.lesson);
+    }
   }
-  state.idx = p.cardIdx || 0;
+  state.idx = 0;
   state.flipped = false;
 }
 
@@ -753,6 +794,7 @@ function renderKanjiFlashcard() {
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
+      <button class="bookmark-btn ${isInReview('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiBookmark(event,'${k.kanji}')" title="Add to review">${isInReview('kanji', state.level, k.kanji) ? '★' : '☆'}</button>
     </div>`;
   $('kflash').addEventListener('click', () => { state.flipped = !state.flipped; renderKanjiFlashcard(); });
   renderStats();
@@ -803,6 +845,7 @@ function renderFlashcard() {
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
+      <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')" title="Add to review">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
     </div>`;
   $('flashcard').addEventListener('click', () => { state.flipped = !state.flipped; renderFlashcard(); });
   renderStats();
@@ -965,6 +1008,20 @@ function advanceKanjiQuiz() {
   renderKanjiQuestion();
 }
 
+function toggleKanjiBookmark(e, kanji) {
+  e.stopPropagation();
+  toggleReview('kanji', state.level, kanji);
+  if (state.mode === 'flashcard') renderKanjiFlashcard();
+  else if (state.mode === 'list') renderKanjiList();
+}
+
+function toggleVocabBookmark(e, jp) {
+  e.stopPropagation();
+  toggleReview('vocab', state.level, jp);
+  if (state.mode === 'flashcard') renderFlashcard();
+  else if (state.mode === 'list') renderList();
+}
+
 // ── Vocab Quiz ──
 function startQuiz() {
   const key = progKey(state.level, state.lesson);
@@ -1076,14 +1133,19 @@ function advanceQuiz() {
 }
 
 function renderKanjiList() {
-  const groups = state.kanjiGroup === 'all' ? getKanjiGroups(state.level) : [state.kanjiGroup];
+  const groups = state.kanjiGroup === '__review__'
+    ? ['Review']
+    : state.kanjiGroup === 'all' ? getKanjiGroups(state.level) : [state.kanjiGroup];
+  const getKanji = g => g === 'Review'
+    ? KANJI[state.level].filter(k => isInReview('kanji', state.level, k.kanji))
+    : getKanjiByGroup(state.level, g);
   $('content').innerHTML = groups.map(g => {
-    const kanji = getKanjiByGroup(state.level, g);
+    const kanji = getKanji(g);
     return `
       <div class="list-group-header">${g} — ${kanji.length} kanji</div>
       <div class="list-table">
         <div class="list-row krow header">
-          <div>漢字</div><div>くん</div><div>おん</div><div class="kimi">いみ</div><div>English</div>
+          <div>漢字</div><div>くん</div><div>おん</div><div class="kimi">いみ</div><div>English</div><div></div>
         </div>
         ${kanji.map(k => `
           <div class="list-row krow">
@@ -1092,6 +1154,7 @@ function renderKanjiList() {
             <div class="muted">${k.on || '—'}</div>
             <div class="muted kimi">${k.imi}</div>
             <div>${k.en}</div>
+            <button class="bookmark-btn ${isInReview('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiBookmark(event,'${k.kanji}')">${isInReview('kanji', state.level, k.kanji) ? '★' : '☆'}</button>
           </div>`).join('')}
       </div>`;
   }).join('');
@@ -1100,13 +1163,22 @@ function renderKanjiList() {
 
 // ── Vocab List ──
 function renderList() {
-  const data = VOCAB[state.level][state.lesson];
-  if (!data) { $('content').innerHTML = `<div class="empty">No data.</div>`; return; }
-  $('content').innerHTML = data.sections.map(s => `
+  let sections;
+  if (state.lesson === '__review__') {
+    const keys = reviewList('vocab', state.level);
+    const all = getLessons(state.level).flatMap(n => getLessonWords(state.level, n));
+    const words = all.filter(w => keys.includes(w.jp));
+    sections = [{ cat: 'Review', words }];
+  } else {
+    const data = VOCAB[state.level][state.lesson];
+    if (!data) { $('content').innerHTML = `<div class="empty">No data.</div>`; return; }
+    sections = data.sections;
+  }
+  $('content').innerHTML = sections.map(s => `
     <div class="list-group-header">${s.cat}</div>
     <div class="list-table">
       <div class="list-row vrow header">
-        <div>Japanese</div><div>Reading</div><div class="romaji-col">Romaji</div><div>English</div>
+        <div>Japanese</div><div>Reading</div><div class="romaji-col">Romaji</div><div>English</div><div></div>
       </div>
       ${s.words.map(w => `
         <div class="list-row vrow">
@@ -1114,6 +1186,7 @@ function renderList() {
           <div class="muted">${w.reading}</div>
           <div class="italic romaji-col">${w.romaji}</div>
           <div>${w.en}</div>
+          <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
         </div>`).join('')}
     </div>`).join('');
   renderStats();
@@ -1275,7 +1348,10 @@ $('level').addEventListener('change', e => {
 });
 $('lesson').addEventListener('change', e => {
   if (state.section === 'kanji') state.kanjiGroup = e.target.value;
-  else state.lesson = parseInt(e.target.value, 10);
+  else {
+    const v = e.target.value;
+    state.lesson = v === '__review__' ? '__review__' : parseInt(v, 10);
+  }
   switchMode(state.mode);
   saveSession();
 });
