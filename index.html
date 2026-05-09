@@ -950,7 +950,6 @@ function renderKanjiQuestion() {
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word">${q.kanji}</div>
            <div class="quiz-sub">${[q.kun ? 'くん: ' + q.kun : '', q.on ? 'おん: ' + q.on : ''].filter(Boolean).join('　')}</div>`}
-      <div id="qFeedback"></div>
       <div class="quiz-options" id="qOpts">
         ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${
           reverse
@@ -977,30 +976,30 @@ function answerKanjiQuiz(i) {
     else if (bi === i) b.classList.add('wrong');
   });
   if (!state.stats.kanji[q.kanji]) state.stats.kanji[q.kanji] = { correct: 0, incorrect: 0 };
-  
-  const mnemonicHTML = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
-  const nextBtn = `<button class="btn primary" style="margin-top:1rem" onclick="advanceKanjiQuiz()">Next →</button>`;
 
-  if (picked.kanji === q.kanji) {
+  const isCorrect = picked.kanji === q.kanji;
+  const mnemonicHTML = q.mnemonic ? `<div style="margin-top:1rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
+  const feedbackHTML = isCorrect
+    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTML}</div>`
+    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${mnemonicHTML}</div>`;
+
+  if (isCorrect) {
     haptic([15, 30, 20]);
     state.quiz.score++;
     state.stats.kanji[q.kanji].correct++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${mnemonicHTML}</div>${nextBtn}`;
   } else {
     haptic([40, 40, 40, 40, 40]);
     state.stats.kanji[q.kanji].incorrect++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${mnemonicHTML}</div>${nextBtn}`;
   }
   saveLevelStats();
   const key = `kanji_${state.level}_${state.kanjiGroup}`;
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  setTimeout(() => {
-    const el = $('qFeedback');
-    const top = el.getBoundingClientRect().top + window.pageYOffset - 16;
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-  }, 50);
+
+  setTimeout(() => { $('qOpts').innerHTML = feedbackHTML; }, 500);
+  const delay = q.mnemonic ? 4500 : (isCorrect ? 1500 : 2500);
+  setTimeout(() => advanceKanjiQuiz(), delay);
 }
 
 function advanceKanjiQuiz() {
@@ -1079,7 +1078,6 @@ function renderQuizQuestion() {
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word" style="font-size:3.5rem">${q.jp}</div>
            <div class="quiz-sub">${q.reading}${state.showRomaji ? ' · <em>' + q.romaji + '</em>' : ''}</div>`}
-      <div id="qFeedback"></div>
       <div class="quiz-options" id="qOpts">
         ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${
           reverse ? o.jp + (state.showRomaji ? '<br><small style="color:var(--muted)">' + o.romaji + '</small>' : '') : o.en
@@ -1105,29 +1103,29 @@ function answerQuiz(i) {
   });
   if (!state.stats.vocab[q.jp]) state.stats.vocab[q.jp] = { correct: 0, incorrect: 0 };
 
-  const mnemonicHTMLv = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
-  const nextBtnV = `<button class="btn primary" style="margin-top:1rem" onclick="advanceQuiz()">Next →</button>`;
+  const isCorrect = picked.en === q.en;
+  const mnemonicHTMLv = q.mnemonic ? `<div style="margin-top:1rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
+  const feedbackHTML = isCorrect
+    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTMLv}</div>`
+    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${mnemonicHTMLv}</div>`;
 
-  if (picked.en === q.en) {
+  if (isCorrect) {
     haptic([15, 30, 20]);
     state.quiz.score++;
     state.stats.vocab[q.jp].correct++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${mnemonicHTMLv}</div>${nextBtnV}`;
   } else {
     haptic([40, 40, 40, 40, 40]);
     state.stats.vocab[q.jp].incorrect++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${mnemonicHTMLv}</div>${nextBtnV}`;
   }
   saveLevelStats();
   const key = progKey(state.level, state.lesson);
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  setTimeout(() => {
-    const el = $('qFeedback');
-    const top = el.getBoundingClientRect().top + window.pageYOffset - 16;
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-  }, 50);
+
+  setTimeout(() => { $('qOpts').innerHTML = feedbackHTML; }, 500);
+  const delay = q.mnemonic ? 4500 : (isCorrect ? 1500 : 2500);
+  setTimeout(() => advanceQuiz(), delay);
 }
 
 // ── Kanji List ──
