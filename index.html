@@ -111,7 +111,7 @@
     transition: all 0.18s var(--ease); flex-shrink: 0;
   }
   .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
-  .icon-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .icon-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 
   /* ── Nav row ── */
   .nav-row {
@@ -451,7 +451,9 @@
         <option value="N4">N4</option>
       </select>
       <select id="lesson" title="Lesson / group" style="max-width:190px"></select>
-      <button class="icon-btn" id="headerShuffleBtn" title="Shuffle Cards">🔀</button>
+      <button class="icon-btn" id="headerShuffleBtn" title="Shuffle Cards">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+      </button>
       <button class="icon-btn" id="themeBtn" title="Toggle dark/light mode">☽</button>
     </div>
   </header>
