@@ -107,6 +107,7 @@
     transition: all 0.18s var(--ease); flex-shrink: 0;
   }
   .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .icon-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
   /* ── Nav row ── */
   .nav-row {
@@ -746,6 +747,7 @@ function renderKanjiFlashcard() {
       </div>
     </div>
     <div class="card-nav">
+      <button class="icon-btn ${state.shuffle ? 'active' : ''}" onclick="toggleShuffle()" title="Shuffle" style="margin-right:0.5rem">🔀</button>
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
@@ -796,6 +798,7 @@ function renderFlashcard() {
       </div>
     </div>
     <div class="card-nav">
+      <button class="icon-btn ${state.shuffle ? 'active' : ''}" onclick="toggleShuffle()" title="Shuffle" style="margin-right:0.5rem">🔀</button>
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
@@ -1230,6 +1233,21 @@ function openDrawer() {
 function closeDrawer() {
   $('drawer').classList.remove('active');
   $('drawerOverlay').classList.remove('active');
+}
+
+function toggleShuffle() {
+  state.shuffle = !state.shuffle;
+  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  if (state.progress[key]) {
+     delete state.progress[key].shuffledDeck;
+     delete state.progress[key].cardIdx;
+  }
+  loadDeck();
+  if (state.mode === 'flashcard') {
+    if (state.section === 'kanji') renderKanjiFlashcard();
+    else renderFlashcard();
+  }
+  saveSession();
 }
 
 // ── Event wiring ──
