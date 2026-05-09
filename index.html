@@ -187,6 +187,12 @@
   .tap-hint::before, .tap-hint::after {
     content: ''; display: inline-block; width: 28px; height: 1px; background: var(--border);
   }
+  .card-item-stat {
+    position: absolute; top: 1.25rem; right: 1.25rem;
+    font-size: 0.8rem; font-weight: 700; color: var(--muted);
+    background: var(--surface); padding: 0.2rem 0.6rem; border-radius: 6px;
+    letter-spacing: 0.05em;
+  }
 
   /* Kanji card content */
   .kanji-group-tag {
@@ -631,6 +637,12 @@ function loadProgress() {
 function saveProgress() { localStorage.setItem('jlpt_progress', JSON.stringify(state.progress)); }
 function progKey(level, lesson) { return `${level}_${lesson}`; }
 
+function getItemStats(term) {
+  const s = state.stats[state.section][term];
+  if (!s || (s.correct === 0 && s.incorrect === 0)) return '';
+  return `<div class="card-item-stat">${s.correct}/${s.correct + s.incorrect}</div>`;
+}
+
 function shuffleArr(a) {
   const arr = [...a];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -733,6 +745,7 @@ function renderKanjiFlashcard() {
     <div class="flashcard-scene animate-in">
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="kflash">
         <div class="card-face front">
+          ${getItemStats(k.kanji)}
           <div class="kanji-group-tag">${k.group}</div>
           <div class="kanji-char">${k.kanji}</div>
           <div class="tap-hint">tap to reveal</div>
@@ -795,6 +808,7 @@ function renderFlashcard() {
     <div class="flashcard-scene animate-in">
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="flashcard">
         <div class="card-face front">
+          ${getItemStats(w.jp)}
           <div class="card-cat">${w.cat}</div>
           <div class="card-jp">${w.jp}</div>
           <div class="tap-hint">tap to reveal</div>
