@@ -996,6 +996,11 @@ function answerKanjiQuiz(i) {
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
+  setTimeout(() => {
+    const el = $('qFeedback');
+    const top = el.getBoundingClientRect().top + window.pageYOffset - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }, 50);
 }
 
 function advanceKanjiQuiz() {
@@ -1118,6 +1123,11 @@ function answerQuiz(i) {
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
+  setTimeout(() => {
+    const el = $('qFeedback');
+    const top = el.getBoundingClientRect().top + window.pageYOffset - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }, 50);
 }
 
 // ── Kanji List ──
