@@ -935,30 +935,33 @@ function answerKanjiQuiz(i) {
   });
   if (!state.stats.kanji[q.kanji]) state.stats.kanji[q.kanji] = { correct: 0, incorrect: 0 };
   
+  const mnemonicHTML = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
+  const nextBtn = `<button class="btn primary" style="margin-top:1rem" onclick="advanceKanjiQuiz()">Next →</button>`;
+
   if (picked.kanji === q.kanji) {
-    haptic([15, 30, 20]); // Correct: Quick double tap
+    haptic([15, 30, 20]);
     state.quiz.score++;
     state.stats.kanji[q.kanji].correct++;
-    const mnemonic = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
-    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${mnemonic}</div>`;
+    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${mnemonicHTML}</div>${nextBtn}`;
   } else {
-    haptic([40, 40, 40, 40, 40]); // Wrong: Staccato vibration
+    haptic([40, 40, 40, 40, 40]);
     state.stats.kanji[q.kanji].incorrect++;
-    const mnemonic = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
-    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${mnemonic}</div>`;
+    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${mnemonicHTML}</div>${nextBtn}`;
   }
   saveLevelStats();
   const key = `kanji_${state.level}_${state.kanjiGroup}`;
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  setTimeout(() => { 
-    state.quiz.idx++; 
-    state.quiz.options = []; 
-    state.progress[key].quizState = state.quiz;
-    saveProgress();
-    renderKanjiQuestion(); 
-  }, picked.kanji === q.kanji ? (q.mnemonic ? 2000 : 800) : (q.mnemonic ? 4500 : 2200));
+}
+
+function advanceKanjiQuiz() {
+  const key = `kanji_${state.level}_${state.kanjiGroup}`;
+  state.quiz.idx++;
+  state.quiz.options = [];
+  state.progress[key].quizState = state.quiz;
+  saveProgress();
+  renderKanjiQuestion();
 }
 
 // ── Vocab Quiz ──
