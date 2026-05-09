@@ -479,9 +479,6 @@
     <label class="checkbox-label" id="romajiWrap">
       <input type="checkbox" id="showRomaji" checked> Romaji
     </label>
-    <label class="checkbox-label">
-      <input type="checkbox" id="shuffleCards"> Shuffle
-    </label>
     <label class="checkbox-label" id="quizDirWrap" style="display:none">
       <input type="checkbox" id="quizReverse"> EN → JP
     </label>
@@ -638,7 +635,8 @@ function saveProgress() { localStorage.setItem('jlpt_progress', JSON.stringify(s
 function progKey(level, lesson) { return `${level}_${lesson}`; }
 
 function getItemStats(term) {
-  const s = state.stats[state.section][term] || { correct: 0, incorrect: 0 };
+  const statsSec = state.stats[state.section] || {};
+  const s = statsSec[term] || { correct: 0, incorrect: 0 };
   return `<div class="card-item-stat">${s.correct}/${s.correct + s.incorrect}</div>`;
 }
 
@@ -1239,7 +1237,6 @@ function openDrawer() {
   $('drawerLesson').value = $('lesson').value;
   // Sync drawer controls
   $('drawerShowRomaji').checked = state.showRomaji;
-  $('drawerShuffleCards').checked = state.shuffle;
   $('drawerQuizReverse').checked = state.quiz.reverse;
   $('drawerRomajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
   $('drawerQuizDirWrap').style.display = state.mode === 'quiz' ? 'inline-flex' : 'none';
@@ -1275,17 +1272,6 @@ $('showRomaji').addEventListener('change', e => {
   else if (state.mode === 'quiz') { if (state.section === 'kanji') renderKanjiQuestion(); else renderQuizQuestion(); }
   saveSession();
 });
-$('shuffleCards').addEventListener('change', () => {
-  state.shuffle = $('shuffleCards').checked;
-  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
-  if (state.progress[key]) {
-     delete state.progress[key].shuffledDeck;
-     delete state.progress[key].cardIdx;
-  }
-  loadDeck();
-  if (state.mode === 'flashcard') renderCurrentFlashcard();
-  saveSession();
-});
 $('quizReverse').addEventListener('change', e => {
   state.quiz.reverse = e.target.checked;
   if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
@@ -1294,10 +1280,6 @@ $('quizReverse').addEventListener('change', e => {
 $('drawerShowRomaji').addEventListener('change', e => {
   $('showRomaji').checked = e.target.checked;
   $('showRomaji').dispatchEvent(new Event('change'));
-});
-$('drawerShuffleCards').addEventListener('change', e => {
-  $('shuffleCards').checked = e.target.checked;
-  $('shuffleCards').dispatchEvent(new Event('change'));
 });
 $('drawerQuizReverse').addEventListener('change', e => {
   $('quizReverse').checked = e.target.checked;
