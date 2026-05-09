@@ -953,7 +953,7 @@ function answerKanjiQuiz(i) {
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  $('qFeedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  setTimeout(() => $('qFeedback').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 
 function advanceKanjiQuiz() {
@@ -1044,31 +1044,37 @@ function answerQuiz(i) {
   });
   if (!state.stats.vocab[q.jp]) state.stats.vocab[q.jp] = { correct: 0, incorrect: 0 };
 
+  const mnemonicHTMLv = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
+  const nextBtnV = `<button class="btn primary" style="margin-top:1rem" onclick="advanceQuiz()">Next →</button>`;
+
   if (picked.en === q.en) {
     haptic([15, 30, 20]);
     state.quiz.score++;
     state.stats.vocab[q.jp].correct++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${q.mnemonic ? '<div class="kanji-mnemonic" style="margin-top:1rem;font-size:0.95rem;opacity:0.9">' + q.mnemonic + '</div>' : ''}</div>`;
+    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${mnemonicHTMLv}</div>${nextBtnV}`;
   } else {
     haptic([40, 40, 40, 40, 40]);
     state.stats.vocab[q.jp].incorrect++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${q.mnemonic ? '<div class="kanji-mnemonic" style="margin-top:1rem;font-size:0.95rem;opacity:0.9">' + q.mnemonic + '</div>' : ''}</div>`;
+    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${mnemonicHTMLv}</div>${nextBtnV}`;
   }
   saveLevelStats();
   const key = progKey(state.level, state.lesson);
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  setTimeout(() => { 
-    state.quiz.idx++; 
-    state.quiz.options = [];
-    state.progress[key].quizState = state.quiz;
-    saveProgress();
-    renderQuizQuestion(); 
-  }, picked.en === q.en ? (q.mnemonic ? 2000 : 800) : (q.mnemonic ? 4500 : 2200));
+  setTimeout(() => $('qFeedback').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 
 // ── Kanji List ──
+function advanceQuiz() {
+  const key = progKey(state.level, state.lesson);
+  state.quiz.idx++;
+  state.quiz.options = [];
+  state.progress[key].quizState = state.quiz;
+  saveProgress();
+  renderQuizQuestion();
+}
+
 function renderKanjiList() {
   const groups = state.kanjiGroup === 'all' ? getKanjiGroups(state.level) : [state.kanjiGroup];
   $('content').innerHTML = groups.map(g => {
