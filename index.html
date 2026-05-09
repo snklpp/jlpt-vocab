@@ -167,13 +167,13 @@
 
   /* Vocab card content */
   .card-cat {
-    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em;
     color: var(--muted); margin-bottom: 1.25rem; font-weight: 600;
   }
-  .card-jp { font-size: 3.8rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.35rem; }
-  .card-reading { font-size: 1.3rem; color: var(--muted); margin-bottom: 0.1rem; }
-  .card-romaji { font-size: 0.95rem; color: var(--muted); font-style: italic; margin-bottom: 0.85rem; }
-  .card-en { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .card-jp { font-size: 4.2rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.35rem; }
+  .card-reading { font-size: 1.4rem; color: var(--muted); margin-bottom: 0.1rem; }
+  .card-romaji { font-size: 1.05rem; color: var(--muted); font-style: italic; margin-bottom: 0.85rem; }
+  .card-en { font-size: 2rem; font-weight: 700; color: var(--accent); }
   .tap-hint {
     font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
     color: var(--muted); margin-top: 2rem; opacity: 0.7;
@@ -191,18 +191,18 @@
     font-weight: 700;
   }
   .kanji-char {
-    font-size: 7rem; font-weight: 700; line-height: 1;
+    font-size: 7.5rem; font-weight: 700; line-height: 1;
     margin-bottom: 0.25rem; letter-spacing: -0.02em;
   }
   .kanji-readings { display: flex; gap: 2.25rem; justify-content: center; margin-bottom: 0.6rem; }
   .kanji-reading-block { text-align: center; }
   .kanji-reading-label {
-    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;
     color: var(--muted); display: block; margin-bottom: 0.18rem; font-weight: 700;
   }
-  .kanji-reading-val { font-size: 1.3rem; font-weight: 500; }
-  .kanji-imi { font-size: 1.1rem; color: var(--muted); margin-bottom: 0.3rem; }
-  .kanji-en { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .kanji-reading-val { font-size: 1.4rem; font-weight: 500; }
+  .kanji-imi { font-size: 1.2rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .kanji-en { font-size: 2rem; font-weight: 700; color: var(--accent); }
   .kanji-mnemonic {
     margin-top: 1.25rem; padding: 0.75rem 1rem;
     background: var(--surface); border-radius: 10px;
@@ -239,8 +239,8 @@
     font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
     color: var(--muted); margin-bottom: 1.25rem; font-weight: 600;
   }
-  .quiz-word { font-size: 5.5rem; line-height: 1; margin-bottom: 0.4rem; font-weight: 700; }
-  .quiz-word.text { font-size: 2.2rem; }
+  .quiz-word { font-size: 6rem; line-height: 1; margin-bottom: 0.4rem; font-weight: 700; }
+  .quiz-word.text { font-size: 2.5rem; }
   .quiz-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.75rem; }
   .quiz-options {
     display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
@@ -248,7 +248,7 @@
   }
   @media (max-width: 480px) { .quiz-options { grid-template-columns: 1fr; } }
   .quiz-option {
-    text-align: left; padding: 1rem 1.25rem; font-size: 1rem;
+    text-align: left; padding: 1.1rem 1.25rem; font-size: 1.1rem;
     border: 1.5px solid var(--border); border-radius: 12px;
     background: var(--card); cursor: pointer;
     transition: all 0.15s var(--ease); font: inherit; color: var(--ink);
@@ -276,8 +276,8 @@
     border-radius: var(--radius); overflow: hidden; margin-bottom: 0.25rem;
   }
   .list-row {
-    display: grid; gap: 0.75rem; padding: 0.85rem 1.25rem;
-    border-bottom: 1px solid var(--border); font-size: 0.95rem; align-items: center;
+    display: grid; gap: 0.75rem; padding: 0.95rem 1.25rem;
+    border-bottom: 1px solid var(--border); font-size: 1.05rem; align-items: center;
   }
   .list-row:last-child { border-bottom: none; }
   .list-row.header {
@@ -287,9 +287,9 @@
   .vrow { grid-template-columns: 1.5fr 1.2fr 0.9fr 1.4fr; }
   .krow { grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr; }
   .list-row .kchar { font-size: 1.55rem; font-weight: 700; }
-  .list-row .jp { font-weight: 700; font-size: 1.05rem; }
+  .list-row .jp { font-weight: 700; font-size: 1.15rem; }
   .list-row .muted { color: var(--muted); }
-  .list-row .italic { color: var(--muted); font-style: italic; font-size: 0.8rem; }
+  .list-row .italic { color: var(--muted); font-style: italic; font-size: 0.9rem; }
   @media (max-width: 560px) {
     .krow { grid-template-columns: 2rem 1fr 1fr 1.4fr; }
     .list-row .kimi { display: none; }
@@ -300,23 +300,23 @@
     
     .container { padding-top: 1rem; }
     header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 0.5rem; }
-    .logo { font-size: 1.25rem; width: auto; margin-bottom: 0; flex-grow: 1; justify-content: center; }
+    .logo { font-size: 1.4rem; width: auto; margin-bottom: 0; flex-grow: 1; justify-content: center; }
     .header-right { width: auto; justify-content: flex-end; gap: 0.5rem; }
     #level, #lesson { display: none; }
     
-    .chip { font-size: 0.9rem; padding: 0.5rem 1.1rem; }
-    select { font-size: 0.9rem; padding: 0.5rem 2.2rem 0.5rem 1rem; }
+    .chip { font-size: 1.05rem; padding: 0.6rem 1.2rem; }
+    select { font-size: 1.05rem; padding: 0.6rem 2.2rem 0.6rem 1rem; }
     
     .card-face { min-height: 320px; padding: 2rem 1.5rem; }
-    .card-jp { font-size: 3.2rem; }
-    .kanji-char { font-size: 5.5rem; }
+    .card-jp { font-size: 4rem; }
+    .kanji-char { font-size: 6.5rem; }
     
-    .quiz-word { font-size: 4rem; }
-    .quiz-word.text { font-size: 2rem; }
-    .quiz-option { font-size: 1.05rem; padding: 1.1rem 1.25rem; }
+    .quiz-word { font-size: 5rem; }
+    .quiz-word.text { font-size: 2.4rem; }
+    .quiz-option { font-size: 1.2rem; padding: 1.25rem 1.25rem; }
     
-    .list-row { font-size: 1rem; padding: 1rem 0.75rem; }
-    .list-row .jp { font-size: 1.15rem; }
+    .list-row { font-size: 1.15rem; padding: 1.1rem 0.75rem; }
+    .list-row .jp { font-size: 1.3rem; }
 
     .nav-row, .options-bar { display: none !important; }
   }
