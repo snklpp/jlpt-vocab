@@ -316,6 +316,9 @@
     
     .list-row { font-size: 1rem; padding: 1rem 0.75rem; }
     .list-row .jp { font-size: 1.15rem; }
+
+    .menu-btn { display: flex; }
+    .nav-row, .options-bar { display: none !important; }
   }
 
   /* ── Summary ── */
@@ -381,6 +384,33 @@
     z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
   }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  
+  /* ── Menu Drawer ── */
+  .menu-btn { display: none; }
+  .drawer-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3); z-index: 2000;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+  
+  .drawer {
+    position: fixed; top: 0; right: -280px; width: 280px; height: 100%;
+    background: var(--card); z-index: 2001; padding: 2.5rem 1.5rem;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s var(--ease);
+    display: flex; flex-direction: column; gap: 2rem;
+    border-left: 1px solid var(--border);
+  }
+  .drawer.active { transform: translateX(-280px); }
+  
+  .drawer-section { display: flex; flex-direction: column; gap: 1rem; }
+  .drawer-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.1em; }
+  .drawer .chip-group { flex-direction: column; width: 100%; gap: 0.5rem; }
+  .drawer .chip { width: 100%; text-align: left; padding: 0.75rem 1.25rem; font-size: 1rem; }
+  .drawer .checkbox-label { font-size: 1.1rem; padding: 0.5rem 0; width: 100%; }
+  .drawer .divider { width: 100%; height: 1px; margin: 0.5rem 0; background: var(--border); }
+
   .modal-content {
     background: var(--card); padding: 2rem; border-radius: var(--radius); width: 90%; max-width: 400px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.2s;
@@ -404,6 +434,7 @@
 
   <header>
     <div class="logo">
+      <button class="icon-btn menu-btn" id="menuBtn" style="margin-right:0.5rem">☰</button>
       JLPT <span class="logo-badge">語彙・漢字</span>
     </div>
     <div class="header-right">
@@ -445,6 +476,41 @@
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="stats" id="stats"></div>
   <div id="content"></div>
+</div>
+
+<!-- Drawer -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-section">
+    <div class="drawer-label">Section</div>
+    <div class="chip-group">
+      <button class="chip" data-sec="vocab">語彙 Vocab</button>
+      <button class="chip" data-sec="kanji">漢字 Kanji</button>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="drawer-section">
+    <div class="drawer-label">Study Mode</div>
+    <div class="chip-group">
+      <button class="chip" data-mode="flashcard">Cards</button>
+      <button class="chip" data-mode="quiz">Quiz</button>
+      <button class="chip" data-mode="list">List</button>
+      <button class="chip" data-mode="stats">My Stats</button>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="drawer-section">
+    <div class="drawer-label">Options</div>
+    <label class="checkbox-label" id="drawerRomajiWrap">
+      <input type="checkbox" id="drawerShowRomaji"> Romaji
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" id="drawerShuffleCards"> Shuffle
+    </label>
+    <label class="checkbox-label" id="drawerQuizDirWrap">
+      <input type="checkbox" id="drawerQuizReverse"> EN → JP
+    </label>
+  </div>
 </div>
 
 <!-- Reset Modal -->
@@ -1109,6 +1175,7 @@ function switchMode(m) {
   
   if (m === 'stats') {
     renderStatsPanel();
+    closeDrawer();
     return;
   }
   if (state.section === 'kanji') {
@@ -1120,6 +1187,7 @@ function switchMode(m) {
     else if (m === 'quiz') startQuiz();
     else renderList();
   }
+  closeDrawer();
 }
 
 function switchSection(sec) {
@@ -1129,6 +1197,23 @@ function switchSection(sec) {
   buildLessonSelect();
   switchMode(state.mode);
   saveSession();
+  closeDrawer();
+}
+
+// ── Drawer logic ──
+function openDrawer() {
+  $('drawer').classList.add('active');
+  $('drawerOverlay').classList.add('active');
+  // Sync drawer controls
+  $('drawerShowRomaji').checked = state.showRomaji;
+  $('drawerShuffleCards').checked = state.shuffle;
+  $('drawerQuizReverse').checked = state.quiz.reverse;
+  $('drawerRomajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
+  $('drawerQuizDirWrap').style.display = state.mode === 'quiz' ? 'inline-flex' : 'none';
+}
+function closeDrawer() {
+  $('drawer').classList.remove('active');
+  $('drawerOverlay').classList.remove('active');
 }
 
 // ── Event wiring ──
@@ -1166,10 +1251,26 @@ $('shuffleCards').addEventListener('change', () => {
   if (state.mode === 'flashcard') renderCurrentFlashcard();
   saveSession();
 });
-$('quizReverse').addEventListener('change', () => {
+$('quizReverse').addEventListener('change', e => {
+  state.quiz.reverse = e.target.checked;
   if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
   saveSession();
 });
+$('drawerShowRomaji').addEventListener('change', e => {
+  $('showRomaji').checked = e.target.checked;
+  $('showRomaji').dispatchEvent(new Event('change'));
+});
+$('drawerShuffleCards').addEventListener('change', e => {
+  $('shuffleCards').checked = e.target.checked;
+  $('shuffleCards').dispatchEvent(new Event('change'));
+});
+$('drawerQuizReverse').addEventListener('change', e => {
+  $('quizReverse').checked = e.target.checked;
+  $('quizReverse').dispatchEvent(new Event('change'));
+});
+$('menuBtn').addEventListener('click', openDrawer);
+$('drawerOverlay').addEventListener('click', closeDrawer);
+
 document.addEventListener('keydown', e => {
   if (state.mode !== 'flashcard') return;
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextCard(); }
