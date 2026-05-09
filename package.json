@@ -6,10 +6,17 @@
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": ["jlpt", "vocabulary", "learning"],
+  "keywords": [
+    "jlpt",
+    "vocabulary",
+    "learning"
+  ],
   "author": "",
   "license": "MIT",
   "engines": {
     "node": "18"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }

@@ -1,9 +1,9 @@
-const CACHE_NAME = 'jlpt-study-v1';
+const CACHE_NAME = 'jlpt-study-v6';
 const ASSETS = [
   './',
   './index.html',
-  './vocab.js?v=3',
-  './kanji.js?v=3',
+  './vocab.js?v=6',
+  './kanji.js?v=6',
   './icon-512.png'
 ];
 
@@ -13,6 +13,22 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS);
     })
   );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter((cacheName) => {
+          return cacheName !== CACHE_NAME;
+        }).map((cacheName) => {
+          return caches.delete(cacheName);
+        })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
