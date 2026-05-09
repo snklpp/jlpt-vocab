@@ -939,11 +939,13 @@ function answerKanjiQuiz(i) {
     haptic([15, 30, 20]); // Correct: Quick double tap
     state.quiz.score++;
     state.stats.kanji[q.kanji].correct++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${q.mnemonic ? '<div class="kanji-mnemonic" style="margin-top:1rem;font-size:0.95rem;opacity:0.9">' + q.mnemonic + '</div>' : ''}</div>`;
+    const mnemonic = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
+    $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!${mnemonic}</div>`;
   } else {
     haptic([40, 40, 40, 40, 40]); // Wrong: Staccato vibration
     state.stats.kanji[q.kanji].incorrect++;
-    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${q.mnemonic ? '<div class="kanji-mnemonic" style="margin-top:1rem;font-size:0.95rem;opacity:0.9">' + q.mnemonic + '</div>' : ''}</div>`;
+    const mnemonic = q.mnemonic ? `<div style="margin-top:1.25rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
+    $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${mnemonic}</div>`;
   }
   saveLevelStats();
   const key = `kanji_${state.level}_${state.kanjiGroup}`;
