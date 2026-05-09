@@ -953,6 +953,7 @@ function answerKanjiQuiz(i) {
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
+  $('qFeedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function advanceKanjiQuiz() {
