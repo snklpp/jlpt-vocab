@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JLPT 語彙・漢字</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" id="metaThemeColor" content="#f6f4ef">
 <link rel="apple-touch-icon" href="icon-512.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -570,12 +570,15 @@ const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
 const savedTheme = localStorage.getItem('jlpt_theme') || 'light';
 document.documentElement.dataset.theme = savedTheme;
 $('themeBtn').textContent = savedTheme === 'dark' ? '☀' : '☽';
+if ($('metaThemeColor')) $('metaThemeColor').setAttribute('content', savedTheme === 'dark' ? '#0d0d0d' : '#f6f4ef');
+
 $('themeBtn').addEventListener('click', () => {
   haptic(25);
   const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = t;
   localStorage.setItem('jlpt_theme', t);
   $('themeBtn').textContent = t === 'dark' ? '☀' : '☽';
+  if ($('metaThemeColor')) $('metaThemeColor').setAttribute('content', t === 'dark' ? '#0d0d0d' : '#f6f4ef');
 });
 
 // ── State ──
