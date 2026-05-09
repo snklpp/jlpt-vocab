@@ -93,17 +93,19 @@
   .chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
 
   select {
-    font: inherit; font-size: 0.85rem; font-weight: 600;
-    padding: 0.4rem 2.2rem 0.4rem 1rem; border-radius: 99px;
-    border: 1.5px solid var(--border); background: var(--card);
+    font: inherit; font-size: 0.95rem; font-weight: 600;
+    padding: 0.6rem 2.5rem 0.6rem 1.25rem; border-radius: 14px;
+    border: 1.5px solid var(--border); background: var(--surface);
     color: var(--ink); cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a8a8a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M2 2l4 4 4-4' stroke='%238a8a8a' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 0.8rem center;
-    transition: border-color 0.15s;
+    background-position: right 1rem center;
+    transition: all 0.2s var(--ease);
   }
-  select:hover { border-color: var(--ink); }
+  select:hover { border-color: var(--muted); background: var(--card); }
+  select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  select option { background: var(--card); color: var(--ink); }
 
   .icon-btn {
     width: 38px; height: 38px; border-radius: 50%;
@@ -312,7 +314,7 @@
     .container { padding-top: 1rem; }
     
     .chip { font-size: 1.05rem; padding: 0.6rem 1.2rem; }
-    select { font-size: 1.05rem; padding: 0.6rem 2.2rem 0.6rem 1rem; }
+    select { font-size: 1.05rem; padding: 0.8rem 2.5rem 0.8rem 1.25rem; }
     
     .card-face { min-height: 320px; padding: 2rem 1.5rem; }
     .card-jp { font-size: 4rem; }
