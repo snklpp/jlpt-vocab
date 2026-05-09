@@ -1266,7 +1266,6 @@ function closeDrawer() {
 function toggleShuffle() {
   haptic(20);
   state.shuffle = !state.shuffle;
-  $('headerShuffleBtn').classList.toggle('active', state.shuffle);
   $('shuffleCards').checked = state.shuffle;
   if ($('drawerShuffleCards')) $('drawerShuffleCards').checked = state.shuffle;
   
@@ -1364,7 +1363,6 @@ document.addEventListener('keydown', e => {
 
 // Init
 document.documentElement.style.setProperty('--font-scale', state.fontScale);
-$('headerShuffleBtn').classList.toggle('active', state.shuffle);
 $('level').value = state.level;
 $('showRomaji').checked = state.showRomaji;
 $('shuffleCards').checked = state.shuffle;
