@@ -191,7 +191,7 @@
     position: absolute; top: 1.25rem; right: 1.25rem;
     font-size: 0.8rem; font-weight: 700; color: var(--muted);
     background: var(--surface); padding: 0.2rem 0.6rem; border-radius: 6px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.05em; z-index: 10;
   }
 
   /* Kanji card content */
@@ -638,8 +638,7 @@ function saveProgress() { localStorage.setItem('jlpt_progress', JSON.stringify(s
 function progKey(level, lesson) { return `${level}_${lesson}`; }
 
 function getItemStats(term) {
-  const s = state.stats[state.section][term];
-  if (!s || (s.correct === 0 && s.incorrect === 0)) return '';
+  const s = state.stats[state.section][term] || { correct: 0, incorrect: 0 };
   return `<div class="card-item-stat">${s.correct}/${s.correct + s.incorrect}</div>`;
 }
 
@@ -746,12 +745,11 @@ function renderKanjiFlashcard() {
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="kflash">
         <div class="card-face front">
           ${getItemStats(k.kanji)}
-          <div class="kanji-group-tag">${k.group}</div>
           <div class="kanji-char">${k.kanji}</div>
           <div class="tap-hint">tap to reveal</div>
         </div>
         <div class="card-face back">
-          <div class="kanji-group-tag">${k.group}</div>
+          ${getItemStats(k.kanji)}
           <div class="kanji-char" style="font-size:4rem;margin-bottom:0.5rem">${k.kanji}</div>
           <div class="kanji-readings">
             ${k.kun ? `<div class="kanji-reading-block">
@@ -809,12 +807,11 @@ function renderFlashcard() {
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="flashcard">
         <div class="card-face front">
           ${getItemStats(w.jp)}
-          <div class="card-cat">${w.cat}</div>
           <div class="card-jp">${w.jp}</div>
           <div class="tap-hint">tap to reveal</div>
         </div>
         <div class="card-face back">
-          <div class="card-cat">${w.cat}</div>
+          ${getItemStats(w.jp)}
           <div class="card-jp" style="font-size:2.4rem;margin-bottom:0.3rem">${w.jp}</div>
           <div class="card-reading">${w.reading}</div>
           ${romajiHTML}
@@ -920,7 +917,7 @@ function renderKanjiQuestion() {
   const opts = state.quiz.options;
   $('content').innerHTML = `
     <div class="quiz-wrap animate-in">
-      <div class="quiz-label">${reverse ? 'Which kanji means:' : 'What does this kanji mean?'}</div>
+      <div style="margin-top:1.5rem"></div>
       ${reverse
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word">${q.kanji}</div>
@@ -1025,7 +1022,7 @@ function renderQuizQuestion() {
   const opts = state.quiz.options;
   $('content').innerHTML = `
     <div class="quiz-wrap animate-in">
-      <div class="quiz-label">${reverse ? 'What is the Japanese for:' : 'What does this mean?'}</div>
+      <div class="quiz-progress">${state.quiz.idx} / ${state.quiz.total}</div>
       ${reverse
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word" style="font-size:3.5rem">${q.jp}</div>
