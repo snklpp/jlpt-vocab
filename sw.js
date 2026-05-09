@@ -1,9 +1,9 @@
-const CACHE_NAME = 'jlpt-study-v7';
+const CACHE_NAME = 'jlpt-study-v8';
 const ASSETS = [
   './',
   './index.html',
-  './vocab.js?v=6',
-  './kanji.js?v=6',
+  './vocab.js?v=7',
+  './kanji.js?v=7',
   './icon-512.png'
 ];
 
@@ -32,9 +32,22 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  const url = new URL(req.url);
+  const isHTML = req.mode === 'navigate' || req.destination === 'document' || url.pathname.endsWith('/') || url.pathname.endsWith('.html');
+
+  if (isHTML) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+        return res;
+      }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    caches.match(req).then((response) => response || fetch(req))
   );
 });
