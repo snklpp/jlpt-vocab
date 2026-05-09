@@ -907,7 +907,9 @@ function startKanjiQuiz() {
   if (p.quizState && p.quizState.idx < p.quizState.total && p.quizState.reverse === $('quizReverse').checked) {
     state.quiz = p.quizState;
   } else {
-    const pool = getKanjiByGroup(state.level, state.kanjiGroup);
+    const pool = state.kanjiGroup === '__review__'
+      ? KANJI[state.level].filter(k => isInReview('kanji', state.level, k.kanji))
+      : getKanjiByGroup(state.level, state.kanjiGroup);
     if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 kanji for quiz.</div>`; return; }
     const order = shuffleArr(pool);
     state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked, options: [] };
@@ -1031,7 +1033,9 @@ function startQuiz() {
   if (p.quizState && p.quizState.idx < p.quizState.total && p.quizState.reverse === $('quizReverse').checked) {
     state.quiz = p.quizState;
   } else {
-    const pool = getLessonWords(state.level, state.lesson);
+    const pool = state.lesson === '__review__'
+      ? getLessons(state.level).flatMap(n => getLessonWords(state.level, n)).filter(w => isInReview('vocab', state.level, w.jp))
+      : getLessonWords(state.level, state.lesson);
     if (pool.length < 4) { $('content').innerHTML = `<div class="empty">Need at least 4 words for quiz.</div>`; return; }
     const order = shuffleArr(pool);
     state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked, options: [] };
