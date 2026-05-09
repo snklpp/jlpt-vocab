@@ -318,7 +318,6 @@
     .list-row { font-size: 1rem; padding: 1rem 0.75rem; }
     .list-row .jp { font-size: 1.15rem; }
 
-    .menu-btn { display: flex; }
     .nav-row, .options-bar { display: none !important; }
   }
 
@@ -388,6 +387,9 @@
   
   /* ── Menu Drawer ── */
   .menu-btn { display: none; }
+  @media (max-width: 600px) {
+    .menu-btn { display: flex; }
+  }
   .drawer-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.3); z-index: 2000;
