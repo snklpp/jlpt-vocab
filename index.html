@@ -656,6 +656,7 @@ function buildLessonSelect() {
       .concat(groups.map(g => ({ id: g, label: `${g} (${getKanjiGroupCount(state.level, g)})` })));
     $('lesson').innerHTML = opts.map(o => `<option value="${o.id}">${o.label}</option>`).join('');
     $('lesson').value = state.kanjiGroup;
+  } else {
     const lessons = getLessons(state.level);
     $('lesson').innerHTML = lessons.map(n => {
       const title = getLessonTitle(state.level, n);
