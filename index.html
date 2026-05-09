@@ -447,6 +447,7 @@
         <option value="N4">N4</option>
       </select>
       <select id="lesson" title="Lesson / group" style="max-width:190px"></select>
+      <button class="icon-btn" id="headerShuffleBtn" title="Shuffle Cards">🔀</button>
       <button class="icon-btn" id="themeBtn" title="Toggle dark/light mode">☽</button>
     </div>
   </header>
@@ -747,7 +748,6 @@ function renderKanjiFlashcard() {
       </div>
     </div>
     <div class="card-nav">
-      <button class="icon-btn ${state.shuffle ? 'active' : ''}" onclick="toggleShuffle()" title="Shuffle" style="margin-right:0.5rem">🔀</button>
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
@@ -798,7 +798,6 @@ function renderFlashcard() {
       </div>
     </div>
     <div class="card-nav">
-      <button class="icon-btn ${state.shuffle ? 'active' : ''}" onclick="toggleShuffle()" title="Shuffle" style="margin-right:0.5rem">🔀</button>
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
@@ -1237,6 +1236,10 @@ function closeDrawer() {
 
 function toggleShuffle() {
   state.shuffle = !state.shuffle;
+  $('headerShuffleBtn').classList.toggle('active', state.shuffle);
+  $('shuffleCards').checked = state.shuffle;
+  if ($('drawerShuffleCards')) $('drawerShuffleCards').checked = state.shuffle;
+  
   const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
   if (state.progress[key]) {
      delete state.progress[key].shuffledDeck;
@@ -1302,6 +1305,7 @@ $('drawerQuizReverse').addEventListener('change', e => {
   $('quizReverse').checked = e.target.checked;
   $('quizReverse').dispatchEvent(new Event('change'));
 });
+$('headerShuffleBtn').addEventListener('click', toggleShuffle);
 $('menuBtn').addEventListener('click', openDrawer);
 $('drawerOverlay').addEventListener('click', closeDrawer);
 $('drawerLevel').addEventListener('change', e => {
@@ -1323,6 +1327,7 @@ document.addEventListener('keydown', e => {
 });
 
 // Init
+$('headerShuffleBtn').classList.toggle('active', state.shuffle);
 $('level').value = state.level;
 $('showRomaji').checked = state.showRomaji;
 $('shuffleCards').checked = state.shuffle;
