@@ -208,11 +208,7 @@
     background: var(--surface); border-radius: 10px;
     border-left: 3px solid var(--accent);
     width: 100%; max-width: 400px; text-align: left; line-height: 1.65;
-    font-size: 0.8rem; color: var(--muted);
-  }
-  .kanji-mnemonic-label {
-    font-size: 0.56rem; text-transform: uppercase; letter-spacing: 0.12em;
-    color: var(--accent); font-weight: 700; display: block; margin-bottom: 0.3rem;
+    font-size: 1.05rem; color: var(--muted);
   }
 
   /* Card nav */
@@ -667,7 +663,7 @@ function renderKanjiFlashcard() {
           <div class="kanji-imi">${k.imi}</div>
           <div class="kanji-en">${k.en}</div>
           ${k.mnemonic ? `<div class="kanji-mnemonic">
-            <span class="kanji-mnemonic-label">💡 Mnemonic</span>${k.mnemonic}
+            💡 ${k.mnemonic}
           </div>` : ''}
         </div>
       </div>
