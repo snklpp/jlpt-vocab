@@ -950,6 +950,7 @@ function renderKanjiQuestion() {
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word">${q.kanji}</div>
            <div class="quiz-sub">${[q.kun ? 'くん: ' + q.kun : '', q.on ? 'おん: ' + q.on : ''].filter(Boolean).join('　')}</div>`}
+      <div id="qFeedback"></div>
       <div class="quiz-options" id="qOpts">
         ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${
           reverse
@@ -957,7 +958,6 @@ function renderKanjiQuestion() {
             : o.en
         }</button>`).join('')}
       </div>
-      <div id="qFeedback"></div>
     </div>`;
   $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
     btn.addEventListener('click', () => answerKanjiQuiz(parseInt(btn.dataset.i)))
@@ -996,7 +996,6 @@ function answerKanjiQuiz(i) {
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  setTimeout(() => $('qFeedback').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 
 function advanceKanjiQuiz() {
@@ -1075,12 +1074,12 @@ function renderQuizQuestion() {
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word" style="font-size:3.5rem">${q.jp}</div>
            <div class="quiz-sub">${q.reading}${state.showRomaji ? ' · <em>' + q.romaji + '</em>' : ''}</div>`}
+      <div id="qFeedback"></div>
       <div class="quiz-options" id="qOpts">
         ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${
           reverse ? o.jp + (state.showRomaji ? '<br><small style="color:var(--muted)">' + o.romaji + '</small>' : '') : o.en
         }</button>`).join('')}
       </div>
-      <div id="qFeedback"></div>
     </div>`;
   $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
     btn.addEventListener('click', () => answerQuiz(parseInt(btn.dataset.i)))
@@ -1119,7 +1118,6 @@ function answerQuiz(i) {
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  setTimeout(() => $('qFeedback').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 
 // ── Kanji List ──
