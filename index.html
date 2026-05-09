@@ -1268,20 +1268,19 @@ function closeDrawer() {
 function toggleShuffle() {
   haptic(20);
   state.shuffle = !state.shuffle;
-  $('shuffleCards').checked = state.shuffle;
-  if ($('drawerShuffleCards')) $('drawerShuffleCards').checked = state.shuffle;
+  
+  const sc = $('shuffleCards'); if (sc) sc.checked = state.shuffle;
+  const dsc = $('drawerShuffleCards'); if (dsc) dsc.checked = state.shuffle;
   
   const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
   if (state.progress[key]) {
-     delete state.progress[key].shuffledDeck;
-     delete state.progress[key].cardIdx;
+    delete state.progress[key].shuffledDeck;
+    state.progress[key].cardIdx = 0;
   }
   loadDeck();
-  if (state.mode === 'flashcard') {
-    if (state.section === 'kanji') renderKanjiFlashcard();
-    else renderFlashcard();
-  }
+  if (state.mode === 'flashcard') renderCurrentFlashcard();
   saveSession();
+  saveProgress();
 }
 
 // ── Event wiring ──
