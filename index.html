@@ -23,6 +23,7 @@
     --shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.05);
     --radius: 16px;
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --font-scale: 1;
   }
 
   [data-theme="dark"] {
@@ -41,7 +42,10 @@
     --shadow: 0 2px 8px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.3);
   }
 
-  html { color-scheme: light; }
+  html { 
+    color-scheme: light; 
+    font-size: calc(16px * var(--font-scale));
+  }
   [data-theme="dark"] html { color-scheme: dark; }
   [data-theme="dark"] .chip.active,
   [data-theme="dark"] .btn.primary { color: var(--bg); }
@@ -524,6 +528,15 @@
       <input type="checkbox" id="drawerQuizReverse"> EN → JP
     </label>
   </div>
+  <div class="divider"></div>
+  <div class="drawer-section">
+    <div class="drawer-label">Font Size</div>
+    <div style="display:flex; align-items:center; gap:1rem">
+      <span style="font-size:0.8rem">A</span>
+      <input type="range" id="fontScaleSlider" min="0.8" max="1.5" step="0.05" value="1" style="flex:1; cursor:pointer; accent-color:var(--accent)">
+      <span style="font-size:1.2rem">A</span>
+    </div>
+  </div>
 </div>
 
 <!-- Reset Modal -->
@@ -580,7 +593,8 @@ function saveSession() {
     mode: state.mode,
     showRomaji: state.showRomaji,
     shuffle: state.shuffle,
-    quizReverse: state.quiz.reverse
+    quizReverse: state.quiz.reverse,
+    fontScale: state.fontScale
   };
   localStorage.setItem('jlpt_session', JSON.stringify(session));
 }
@@ -597,6 +611,7 @@ const state = {
   deck: [],
   showRomaji: session.showRomaji !== undefined ? session.showRomaji : true,
   shuffle: session.shuffle || false,
+  fontScale: session.fontScale || 1,
   quiz: { idx: 0, score: 0, answered: false, options: [], reverse: session.quizReverse || false, total: 0, order: [] },
   progress: loadProgress(),
   stats: loadLevelStats(session.level || 'N5'),
@@ -1228,6 +1243,7 @@ function openDrawer() {
   $('drawerQuizReverse').checked = state.quiz.reverse;
   $('drawerRomajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
   $('drawerQuizDirWrap').style.display = state.mode === 'quiz' ? 'inline-flex' : 'none';
+  $('fontScaleSlider').value = state.fontScale;
 }
 function closeDrawer() {
   $('drawer').classList.remove('active');
@@ -1308,6 +1324,12 @@ $('drawerQuizReverse').addEventListener('change', e => {
 $('headerShuffleBtn').addEventListener('click', toggleShuffle);
 $('menuBtn').addEventListener('click', openDrawer);
 $('drawerOverlay').addEventListener('click', closeDrawer);
+$('fontScaleSlider').addEventListener('input', e => {
+  const val = parseFloat(e.target.value);
+  state.fontScale = val;
+  document.documentElement.style.setProperty('--font-scale', val);
+  saveSession();
+});
 $('drawerLevel').addEventListener('change', e => {
   $('level').value = e.target.value;
   $('level').dispatchEvent(new Event('change'));
@@ -1327,6 +1349,7 @@ document.addEventListener('keydown', e => {
 });
 
 // Init
+document.documentElement.style.setProperty('--font-scale', state.fontScale);
 $('headerShuffleBtn').classList.toggle('active', state.shuffle);
 $('level').value = state.level;
 $('showRomaji').checked = state.showRomaji;
