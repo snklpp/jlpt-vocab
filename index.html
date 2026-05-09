@@ -572,7 +572,7 @@ const savedTheme = localStorage.getItem('jlpt_theme') || 'light';
 document.documentElement.dataset.theme = savedTheme;
 $('themeBtn').textContent = savedTheme === 'dark' ? '☀' : '☽';
 $('themeBtn').addEventListener('click', () => {
-  haptic(20);
+  haptic(25);
   const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = t;
   localStorage.setItem('jlpt_theme', t);
@@ -843,8 +843,13 @@ function prevCard() {
   }
 }
 function nextCard() {
-  haptic(10);
-  if (!state.flipped) { state.flipped = true; renderCurrentFlashcard(); return; }
+  if (!state.flipped) { 
+    haptic(25); // Reveal is a bigger action
+    state.flipped = true; 
+    renderCurrentFlashcard(); 
+    return; 
+  }
+  haptic(10); // Simple next is light
   state.idx++; state.flipped = false; 
   const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
   state.progress[key] = { ...(state.progress[key] || {}), cardIdx: state.idx };
@@ -852,7 +857,7 @@ function nextCard() {
   renderCurrentFlashcard();
 }
 function restartDeck() {
-  haptic(30);
+  haptic(50); // Heavy pulse for reset
   const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
   if (state.progress[key]) {
     delete state.progress[key].cardIdx;
@@ -865,7 +870,7 @@ function restartDeck() {
   else if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
 }
 function nextLesson() {
-  haptic(30);
+  haptic([30, 40, 30]); // Success pattern
   const lessons = getLessons(state.level);
   const i = lessons.indexOf(state.lesson);
   if (i < lessons.length - 1) { state.lesson = lessons[i + 1]; $('lesson').value = state.lesson; switchMode(state.mode); }
@@ -951,12 +956,12 @@ function answerKanjiQuiz(i) {
   if (!state.stats.kanji[q.kanji]) state.stats.kanji[q.kanji] = { correct: 0, incorrect: 0 };
   
   if (picked.kanji === q.kanji) {
-    haptic(20);
+    haptic([15, 30, 20]); // Correct: Quick double tap
     state.quiz.score++;
     state.stats.kanji[q.kanji].correct++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
   } else {
-    haptic([40, 60, 40]);
+    haptic([40, 40, 40, 40, 40]); // Wrong: Staccato vibration
     state.stats.kanji[q.kanji].incorrect++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}</div>`;
   }
@@ -1054,10 +1059,12 @@ function answerQuiz(i) {
   if (!state.stats.vocab[q.jp]) state.stats.vocab[q.jp] = { correct: 0, incorrect: 0 };
 
   if (picked.en === q.en) {
+    haptic([15, 30, 20]);
     state.quiz.score++;
     state.stats.vocab[q.jp].correct++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback good">✓ Correct!</div>`;
   } else {
+    haptic([40, 40, 40, 40, 40]);
     state.stats.vocab[q.jp].incorrect++;
     $('qFeedback').innerHTML = `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}</div>`;
   }
@@ -1266,7 +1273,7 @@ function closeDrawer() {
 }
 
 function toggleShuffle() {
-  haptic(20);
+  haptic(25);
   state.shuffle = !state.shuffle;
   
   const sc = $('shuffleCards'); if (sc) sc.checked = state.shuffle;
