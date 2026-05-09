@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JLPT 語彙・漢字</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="icon-512.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1328,6 +1331,9 @@ document.addEventListener('keydown', e => {
 });
 
 // Init
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 document.documentElement.style.setProperty('--font-scale', state.fontScale);
 $('level').value = state.level;
 $('showRomaji').checked = state.showRomaji;
