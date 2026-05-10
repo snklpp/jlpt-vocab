@@ -590,8 +590,8 @@
   </div>
 </div>
 
-<script src="vocab.js?v=12"></script>
-<script src="kanji.js?v=14"></script>
+<script src="vocab.js?v=13"></script>
+<script src="kanji.js?v=15"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -908,7 +908,7 @@ function getKanjiBreakdown(jp) {
       </span>
     </span>`
   ).join('');
-  return `<div class="kanji-breakdown"><span class="kb-label">字</span>${items}</div>`;
+  return `<div class="kanji-breakdown">${items}</div>`;
 }
 
 // ── Vocab flashcard ──
