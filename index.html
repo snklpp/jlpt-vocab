@@ -486,6 +486,7 @@
       <button class="icon-btn" id="headerRestartBtn" title="Restart Lesson">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
       </button>
+      <button class="icon-btn" id="romajiBtn" title="Toggle Romaji" style="font-size:0.9rem; font-weight:800">R</button>
       <button class="icon-btn" id="themeBtn" title="Toggle dark/light mode">☽</button>
     </div>
   </header>
@@ -589,8 +590,8 @@
   </div>
 </div>
 
-<script src="vocab.js?v=11"></script>
-<script src="kanji.js?v=13"></script>
+<script src="vocab.js?v=12"></script>
+<script src="kanji.js?v=14"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -1539,6 +1540,40 @@ if ('serviceWorker' in navigator) {
 }
 document.documentElement.style.setProperty('--font-scale', state.fontScale);
 $('level').value = state.level;
+$('romajiBtn').addEventListener('click', () => {
+  haptic(10);
+  state.showRomaji = !state.showRomaji;
+  if ($('showRomaji')) $('showRomaji').checked = state.showRomaji;
+  if ($('drawerShowRomaji')) $('drawerShowRomaji').checked = state.showRomaji;
+  
+  if (state.mode === 'flashcard') renderCurrentFlashcard();
+  else if (state.mode === 'quiz') { 
+    if (state.section === 'kanji') renderKanjiQuestion(); 
+    else renderQuizQuestion(); 
+  }
+  else if (state.mode === 'list') { 
+    if (state.section === 'kanji') renderKanjiList(); 
+    else renderList(); 
+  }
+  else if (state.mode === 'stats') renderStatsPanel();
+  
+  saveSession();
+  updateRomajiBtn();
+});
+
+function updateRomajiBtn() {
+  const btn = $('romajiBtn');
+  if (state.showRomaji) {
+    btn.style.color = 'var(--accent)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.background = 'var(--accent-soft)';
+  } else {
+    btn.style.color = 'var(--muted)';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.background = 'none';
+  }
+}
+updateRomajiBtn();
 $('showRomaji').checked = state.showRomaji;
 $('quizReverse').checked = state.quiz.reverse;
 buildLessonSelect();
