@@ -1815,7 +1815,8 @@ const VOCAB = {
         ]},
       ]
     },
-  }
+  },
+  N3: {}
 };
 
 // Flatten lessons into per-lesson word arrays
