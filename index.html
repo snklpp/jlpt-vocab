@@ -575,7 +575,7 @@
 </div>
 
 <script src="vocab.js?v=11"></script>
-<script src="kanji.js?v=12"></script>
+<script src="kanji.js?v=13"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -817,7 +817,6 @@ function kanjiLookupMap() {
   return _kmap;
 }
 function getKanjiBreakdown(jp) {
-  if (state.level !== 'N5') return '';
   const map = kanjiLookupMap();
   const hits = [...jp].filter(c => c >= '一' && c <= '龯').map(c => map[c]).filter(Boolean);
   if (hits.length === 0) return '';
