@@ -184,6 +184,11 @@
   .card-reading { font-size: 1.4rem; color: var(--muted); margin-bottom: 0.1rem; }
   .card-romaji { font-size: 1.05rem; color: var(--muted); font-style: italic; margin-bottom: 0.85rem; }
   .card-en { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .kanji-breakdown { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.9rem; padding: 0.5rem 0.7rem; background: var(--surface); border-radius: 8px; }
+  .kb-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 700; margin-right: 0.15rem; flex-shrink: 0; }
+  .kb-item { display: inline-flex; align-items: baseline; gap: 0.3rem; background: var(--card); border-radius: 6px; padding: 0.18rem 0.5rem; }
+  .kb-char { font-size: 1.05rem; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .kb-en { font-size: 0.68rem; color: var(--muted); }
   .tap-hint {
     font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
     color: var(--muted); margin-top: 2rem; opacity: 0.7;
@@ -801,6 +806,26 @@ function renderKanjiFlashcard() {
   renderStats();
 }
 
+// ── Kanji breakdown for vocab words ──
+let _kmap = null;
+function kanjiLookupMap() {
+  if (!_kmap) {
+    _kmap = {};
+    Object.values(KANJI).forEach(arr => arr.forEach(k => { if (!_kmap[k.kanji]) _kmap[k.kanji] = k; }));
+  }
+  return _kmap;
+}
+function getKanjiBreakdown(jp) {
+  if (state.level !== 'N5') return '';
+  const map = kanjiLookupMap();
+  const hits = [...jp].filter(c => c >= '一' && c <= '龯').map(c => map[c]).filter(Boolean);
+  if (hits.length === 0) return '';
+  const items = hits.map(k =>
+    `<span class="kb-item"><span class="kb-char">${k.kanji}</span><span class="kb-en">${k.en}</span></span>`
+  ).join('');
+  return `<div class="kanji-breakdown"><span class="kb-label">字</span>${items}</div>`;
+}
+
 // ── Vocab flashcard ──
 function renderFlashcard() {
   if (state.deck.length === 0) {
@@ -839,6 +864,7 @@ function renderFlashcard() {
           <div class="card-reading">${w.reading}</div>
           ${romajiHTML}
           <div class="card-en">${w.en}</div>
+          ${getKanjiBreakdown(w.jp)}
         </div>
       </div>
     </div>
@@ -1113,10 +1139,11 @@ function answerQuiz(i) {
 
   const isCorrect = picked.en === q.en;
   const mnemonicHTMLv = q.mnemonic ? `<div style="margin-top:1rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
+  const kbHTML = getKanjiBreakdown(q.jp);
   const nextBtnV = `<button class="btn primary" style="margin-top:1rem;width:100%" onclick="advanceQuiz()">Next →</button>`;
   const feedbackHTML = isCorrect
-    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTMLv}</div>${nextBtnV}`
-    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${mnemonicHTMLv}</div>${nextBtnV}`;
+    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTMLv}${kbHTML}</div>${nextBtnV}`
+    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${mnemonicHTMLv}${kbHTML}</div>${nextBtnV}`;
 
   if (isCorrect) {
     haptic([15, 30, 20]);
