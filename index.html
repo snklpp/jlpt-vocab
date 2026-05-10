@@ -575,7 +575,7 @@
 </div>
 
 <script src="vocab.js?v=11"></script>
-<script src="kanji.js?v=11"></script>
+<script src="kanji.js?v=12"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -812,6 +812,7 @@ function kanjiLookupMap() {
   if (!_kmap) {
     _kmap = {};
     Object.values(KANJI).forEach(arr => arr.forEach(k => { if (!_kmap[k.kanji]) _kmap[k.kanji] = k; }));
+    Object.entries(KANJI_SUPPLEMENT).forEach(([c, en]) => { if (!_kmap[c]) _kmap[c] = { kanji: c, en }; });
   }
   return _kmap;
 }
