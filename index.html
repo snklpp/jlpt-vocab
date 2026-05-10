@@ -191,6 +191,10 @@
   }
   .card-reading { font-size: 1.4rem; color: var(--muted); margin: 0; }
   .card-romaji { font-size: 1.05rem; color: var(--muted); font-style: italic; margin: 0; }
+  .kana-row { display: flex !important; align-items: flex-start; flex-wrap: wrap; justify-content: center; gap: 0.04em; }
+  .mora-unit { display: inline-flex; flex-direction: column; align-items: center; }
+  .mora-k { line-height: 1.2; }
+  .mora-r { font-size: 0.5em; color: var(--muted); font-style: italic; line-height: 1.4; letter-spacing: 0.01em; min-width: 1px; text-align: center; }
   .card-en { font-size: 2rem; font-weight: 700; color: var(--accent); }
   .kanji-breakdown { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.9rem; padding: 0.7rem 0.9rem; background: var(--surface); border-radius: 8px; }
   .kb-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 700; margin-right: 0.2rem; flex-shrink: 0; }
@@ -328,7 +332,7 @@
   .krow { grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr 2rem; }
   .list-row .kchar { font-size: 1.55rem; font-weight: 700; }
   .list-row .jp { font-weight: 700; font-size: 1.15rem; }
-  .list-row .muted { color: var(--muted); }
+  .list-row .muted { color: var(--muted); font-size: 1.05rem; }
   .list-row .italic { color: var(--muted); font-style: italic; font-size: 0.9rem; }
   @media (max-width: 560px) {
     .krow { grid-template-columns: 2rem 1fr 1fr 1.4fr; }
@@ -590,6 +594,69 @@
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
+
+// ── Kana → aligned romaji ──
+const _KD = {
+  'きゃ':'kya','きゅ':'kyu','きょ':'kyo','キャ':'kya','キュ':'kyu','キョ':'kyo',
+  'しゃ':'sha','しゅ':'shu','しょ':'sho','シャ':'sha','シュ':'shu','ショ':'sho',
+  'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','チャ':'cha','チュ':'chu','チョ':'cho',
+  'にゃ':'nya','にゅ':'nyu','にょ':'nyo','ニャ':'nya','ニュ':'nyu','ニョ':'nyo',
+  'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','ヒャ':'hya','ヒュ':'hyu','ヒョ':'hyo',
+  'みゃ':'mya','みゅ':'myu','みょ':'myo','ミャ':'mya','ミュ':'myu','ミョ':'myo',
+  'りゃ':'rya','りゅ':'ryu','りょ':'ryo','リャ':'rya','リュ':'ryu','リョ':'ryo',
+  'ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo','ギャ':'gya','ギュ':'gyu','ギョ':'gyo',
+  'じゃ':'ja','じゅ':'ju','じょ':'jo','ジャ':'ja','ジュ':'ju','ジョ':'jo',
+  'ぢゃ':'ja','ぢゅ':'ju','ぢょ':'jo','ヂャ':'ja','ヂュ':'ju','ヂョ':'jo',
+  'びゃ':'bya','びゅ':'byu','びょ':'byo','ビャ':'bya','ビュ':'byu','ビョ':'byo',
+  'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo','ピャ':'pya','ピュ':'pyu','ピョ':'pyo',
+  'ファ':'fa','フィ':'fi','フェ':'fe','フォ':'fo',
+  'ウィ':'wi','ウェ':'we','ヴァ':'va','ヴィ':'vi','ヴェ':'ve','ヴォ':'vo',
+  'ティ':'ti','トゥ':'tu','ディ':'di','ドゥ':'du',
+};
+const _KS = {
+  'あ':'a','い':'i','う':'u','え':'e','お':'o','ア':'a','イ':'i','ウ':'u','エ':'e','オ':'o',
+  'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko','カ':'ka','キ':'ki','ク':'ku','ケ':'ke','コ':'ko',
+  'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so','サ':'sa','シ':'shi','ス':'su','セ':'se','ソ':'so',
+  'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to','タ':'ta','チ':'chi','ツ':'tsu','テ':'te','ト':'to',
+  'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no','ナ':'na','ニ':'ni','ヌ':'nu','ネ':'ne','ノ':'no',
+  'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho','ハ':'ha','ヒ':'hi','フ':'fu','ヘ':'he','ホ':'ho',
+  'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo','マ':'ma','ミ':'mi','ム':'mu','メ':'me','モ':'mo',
+  'や':'ya','ゆ':'yu','よ':'yo','ヤ':'ya','ユ':'yu','ヨ':'yo',
+  'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro','ラ':'ra','リ':'ri','ル':'ru','レ':'re','ロ':'ro',
+  'わ':'wa','ゐ':'i','ゑ':'e','を':'wo','ワ':'wa','ヲ':'wo',
+  'ん':'n','ン':'n',
+  'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go','ガ':'ga','ギ':'gi','グ':'gu','ゲ':'ge','ゴ':'go',
+  'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo','ザ':'za','ジ':'ji','ズ':'zu','ゼ':'ze','ゾ':'zo',
+  'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do','ダ':'da','ヂ':'ji','ヅ':'zu','デ':'de','ド':'do',
+  'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo','バ':'ba','ビ':'bi','ブ':'bu','ベ':'be','ボ':'bo',
+  'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po','パ':'pa','ピ':'pi','プ':'pu','ペ':'pe','ポ':'po',
+  'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o','ァ':'a','ィ':'i','ゥ':'u','ェ':'e','ォ':'o',
+  'ヴ':'vu','ー':'-','〜':'~','　':' ',' ':' ','・':'·',
+};
+function splitMorae(r) {
+  const out = [];
+  let i = 0;
+  while (i < r.length) {
+    const c = r[i], c2 = r[i + 1] || '';
+    if (c === 'っ' || c === 'ッ') {
+      const nr = _KD[c2 + (r[i + 2] || '')] || _KS[c2] || '';
+      out.push({ kana: c, romaji: nr ? nr[0] : '' });
+      i++; continue;
+    }
+    const pair = c + c2;
+    if (_KD[pair]) { out.push({ kana: pair, romaji: _KD[pair] }); i += 2; continue; }
+    if (_KS[c] !== undefined) { out.push({ kana: c, romaji: _KS[c] }); i++; continue; }
+    out.push({ kana: c, romaji: '' }); i++;
+  }
+  return out;
+}
+function kanaRomaji(reading, showRomaji, wrapClass = 'card-reading') {
+  if (!showRomaji) return `<div class="${wrapClass}">${reading}</div>`;
+  const units = splitMorae(reading).map(m =>
+    `<span class="mora-unit"><span class="mora-k">${m.kana}</span><span class="mora-r">${m.romaji}</span></span>`
+  ).join('');
+  return `<div class="kana-row ${wrapClass}">${units}</div>`;
+}
 
 // ── Theme ──
 const savedTheme = localStorage.getItem('jlpt_theme') || 'light';
@@ -879,8 +946,7 @@ function renderFlashcard() {
           ${getItemStats(w.jp)}
           <div class="card-jp" style="font-size:2.4rem;margin-bottom:0.3rem">${w.jp}</div>
           <div class="reading-romaji-stack">
-            <div class="card-reading">${w.reading}</div>
-            ${state.showRomaji ? `<div class="card-romaji">${w.romaji}</div>` : ''}
+            ${kanaRomaji(w.reading, state.showRomaji)}
           </div>
           <div class="card-en">${w.en}</div>
           ${getKanjiBreakdown(w.jp)}
@@ -1131,13 +1197,12 @@ function renderQuizQuestion() {
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word" style="font-size:3.5rem">${q.jp}</div>
            <div class="reading-romaji-stack" style="margin-bottom:1.5rem">
-             <div class="card-reading">${q.reading}</div>
-             ${state.showRomaji ? `<div class="card-romaji">${q.romaji}</div>` : ''}
+             ${kanaRomaji(q.reading, state.showRomaji)}
            </div>`}
         ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}" style="text-align:center">
-          ${reverse 
+          ${reverse
             ? `<div style="font-size:1.4rem; font-weight:700">${o.jp}</div>
-               ${state.showRomaji ? `<div style="font-size:0.85rem; color:var(--muted); margin-top:0.1rem">${o.romaji}</div>` : ''}`
+               ${state.showRomaji ? `<div style="font-size:0.85rem; margin-top:0.1rem">${kanaRomaji(o.reading, true, 'muted')}</div>` : ''}`
             : o.en
           }
         </button>`).join('')}
@@ -1248,8 +1313,7 @@ function renderList() {
         <div class="list-row vrow">
           <div class="jp">${w.jp}</div>
           <div class="reading-romaji-stack" style="align-items:flex-start; margin:0">
-            <div class="muted" style="font-size:1.05rem">${w.reading}</div>
-            ${state.showRomaji ? `<div class="italic" style="font-size:0.85rem">${w.romaji}</div>` : ''}
+            ${kanaRomaji(w.reading, state.showRomaji, 'muted')}
           </div>
           <div style="font-size:1.05rem">${w.en}</div>
           <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
