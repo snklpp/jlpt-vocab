@@ -568,8 +568,8 @@
   </div>
 </div>
 
-<script src="vocab.js?v=7"></script>
-<script src="kanji.js?v=7"></script>
+<script src="vocab.js?v=8"></script>
+<script src="kanji.js?v=8"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -937,8 +937,8 @@ function renderKanjiQuestion() {
   if (state.quiz.options && state.quiz.options.length > 0) {
     // Resume with existing options
   } else {
-    const allKanji = KANJI[state.level];
-    const distractors = shuffleArr(allKanji.filter(k => k.en !== q.en)).slice(0, 3);
+    const pool = getKanjiByGroup(state.level, state.kanjiGroup).filter(k => k.en !== q.en);
+    const distractors = shuffleArr(pool).slice(0, 3);
     const opts = shuffleArr([q, ...distractors]);
     state.quiz.options = opts;
   }
