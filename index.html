@@ -612,8 +612,8 @@
   </div>
 </div>
 
-<script src="vocab.js?v=15"></script>
-<script src="kanji.js?v=17"></script>
+<script src="vocab.js?v=16"></script>
+<script src="kanji.js?v=18"></script>
 <script src="grammar.js?v=1"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -785,14 +785,7 @@ function toggleMastered(type, level, key) {
   if (!state.mastered[type][level]) state.mastered[type][level] = [];
   const arr = state.mastered[type][level];
   const idx = arr.indexOf(key);
-  if (idx === -1) {
-    arr.push(key);
-    // Remove from review if marking as mastered
-    const rArr = state.review[type]?.[level];
-    if (rArr) { const ri = rArr.indexOf(key); if (ri !== -1) rArr.splice(ri, 1); saveReview(); }
-  } else {
-    arr.splice(idx, 1);
-  }
+  if (idx === -1) arr.push(key); else arr.splice(idx, 1);
   saveMastered();
   buildLessonSelect();
 }
@@ -859,8 +852,7 @@ function loadDeck() {
       const keys = masteredList('kanji', state.level);
       state.deck = KANJI[state.level].filter(k => keys.includes(k.kanji));
     } else {
-      const pool = getKanjiByGroup(state.level, state.kanjiGroup);
-      state.deck = pool.filter(k => !isMastered('kanji', state.level, k.kanji));
+      state.deck = getKanjiByGroup(state.level, state.kanjiGroup);
     }
   } else if (state.section === 'grammar') {
     const data = getGrammarLesson(state.level, state.lesson);
@@ -875,8 +867,7 @@ function loadDeck() {
       const all = getLessons(state.level).flatMap(n => getLessonWords(state.level, n));
       state.deck = all.filter(w => keys.includes(w.jp));
     } else {
-      const pool = getLessonWords(state.level, state.lesson);
-      state.deck = pool.filter(w => !isMastered('vocab', state.level, w.jp));
+      state.deck = getLessonWords(state.level, state.lesson);
     }
   }
   state.idx = 0;
@@ -1215,11 +1206,7 @@ function toggleKanjiBookmark(e, kanji) {
 function toggleKanjiMastered(e, kanji) {
   e.stopPropagation();
   toggleMastered('kanji', state.level, kanji);
-  if (state.mode === 'flashcard') {
-    loadDeck();
-    if (state.idx >= state.deck.length) state.idx = Math.max(0, state.deck.length - 1);
-    renderKanjiFlashcard();
-  }
+  if (state.mode === 'flashcard') renderKanjiFlashcard();
   else if (state.mode === 'list') renderKanjiList();
 }
 
@@ -1232,12 +1219,7 @@ function toggleVocabBookmark(e, jp) {
 function toggleVocabMastered(e, jp) {
   e.stopPropagation();
   toggleMastered('vocab', state.level, jp);
-  if (state.mode === 'flashcard') {
-    // If we just mastered it, it should be removed from the deck
-    loadDeck(); 
-    if (state.idx >= state.deck.length) state.idx = Math.max(0, state.deck.length - 1);
-    renderFlashcard();
-  }
+  if (state.mode === 'flashcard') renderFlashcard();
   else if (state.mode === 'list') renderList();
 }
 
@@ -1372,7 +1354,7 @@ function renderKanjiList() {
   const getKanji = g => {
     if (g === 'Review') return KANJI[state.level].filter(k => isInReview('kanji', state.level, k.kanji));
     if (g === 'Confident') return KANJI[state.level].filter(k => isMastered('kanji', state.level, k.kanji));
-    return getKanjiByGroup(state.level, g).filter(k => !isMastered('kanji', state.level, k.kanji));
+    return getKanjiByGroup(state.level, g);
   };
   $('content').innerHTML = groups.map(g => {
     const kanji = getKanji(g);
