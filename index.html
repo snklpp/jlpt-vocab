@@ -271,7 +271,14 @@
   }
   .bookmark-btn:hover { color: var(--accent); transform: scale(1.2); }
   .bookmark-btn.marked { color: var(--accent); }
-  .list-row .bookmark-btn { font-size: 1rem; }
+  .mastered-btn {
+    font-size: 1.2rem; background: none; border: none; cursor: pointer;
+    color: var(--muted); padding: 0.2rem 0.4rem; line-height: 1;
+    transition: color 0.15s, transform 0.15s;
+  }
+  .mastered-btn:hover { color: var(--good); transform: scale(1.2); }
+  .mastered-btn.marked { color: var(--good); }
+  .list-row .bookmark-btn, .list-row .mastered-btn { font-size: 1rem; }
   .btn {
     font: inherit; font-size: 0.8rem; font-weight: 700;
     padding: 0.5rem 1.3rem; border-radius: 99px;
@@ -340,9 +347,9 @@
     background: var(--surface); font-weight: 700; font-size: 0.65rem;
     text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
   }
-  .vrow { grid-template-columns: 1.4fr 1.6fr 1.6fr 2.5rem; }
+  .vrow { grid-template-columns: 1.4fr 1.6fr 1.6fr 4.2rem; }
   .list-row .romaji-col { display: none; } /* Hide old column */
-  .krow { grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr 2rem; }
+  .krow { grid-template-columns: 2.5rem 1fr 1fr 1fr 1.6fr 4.2rem; }
   .list-row .kchar { font-size: 1.55rem; font-weight: 700; }
   .list-row .jp { font-weight: 700; font-size: 1.15rem; }
   .list-row .muted { color: var(--muted); font-size: 1.05rem; }
@@ -605,8 +612,8 @@
   </div>
 </div>
 
-<script src="vocab.js?v=14"></script>
-<script src="kanji.js?v=16"></script>
+<script src="vocab.js?v=15"></script>
+<script src="kanji.js?v=17"></script>
 <script src="grammar.js?v=1"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -726,6 +733,7 @@ const state = {
   quiz: { idx: 0, score: 0, answered: false, options: [], reverse: session.quizReverse || false, total: 0, order: [] },
   progress: loadProgress(),
   review: loadReview(),
+  mastered: loadMastered(),
   stats: loadLevelStats(session.level || 'N5'),
 };
 
@@ -764,6 +772,30 @@ function toggleReview(type, level, key) {
   saveReview();
   buildLessonSelect();
 }
+function loadMastered() {
+  try { return JSON.parse(localStorage.getItem('jlpt_mastered') || '{}'); }
+  catch { return {}; }
+}
+function saveMastered() { localStorage.setItem('jlpt_mastered', JSON.stringify(state.mastered)); }
+function masteredList(type, level) { return state.mastered[type]?.[level] || []; }
+function masteredCount(type, level) { return masteredList(type, level).length; }
+function isMastered(type, level, key) { return masteredList(type, level).includes(key); }
+function toggleMastered(type, level, key) {
+  if (!state.mastered[type]) state.mastered[type] = {};
+  if (!state.mastered[type][level]) state.mastered[type][level] = [];
+  const arr = state.mastered[type][level];
+  const idx = arr.indexOf(key);
+  if (idx === -1) {
+    arr.push(key);
+    // Remove from review if marking as mastered
+    const rArr = state.review[type]?.[level];
+    if (rArr) { const ri = rArr.indexOf(key); if (ri !== -1) rArr.splice(ri, 1); saveReview(); }
+  } else {
+    arr.splice(idx, 1);
+  }
+  saveMastered();
+  buildLessonSelect();
+}
 
 function getItemStats(term) {
   const statsSec = state.stats[state.section] || {};
@@ -785,8 +817,10 @@ function buildLessonSelect() {
   if (state.section === 'kanji') {
     const groups = getKanjiGroups(state.level);
     const rc = reviewCount('kanji', state.level);
+    const mc = masteredCount('kanji', state.level);
     const reviewOpt = rc > 0 ? [{ id: '__review__', label: `★ Review (${rc})` }] : [];
-    const opts = reviewOpt
+    const masterOpt = mc > 0 ? [{ id: '__mastered__', label: `✅ Confident (${mc})` }] : [];
+    const opts = reviewOpt.concat(masterOpt)
       .concat([{ id: 'all', label: `All (${KANJI[state.level].length})` }])
       .concat(groups.map(g => ({ id: g, label: `${g} (${getKanjiGroupCount(state.level, g)})` })));
     $('lesson').innerHTML = opts.map(o => `<option value="${o.id}">${o.label}</option>`).join('');
@@ -821,8 +855,12 @@ function loadDeck() {
     if (state.kanjiGroup === '__review__') {
       const keys = reviewList('kanji', state.level);
       state.deck = KANJI[state.level].filter(k => keys.includes(k.kanji));
+    } else if (state.kanjiGroup === '__mastered__') {
+      const keys = masteredList('kanji', state.level);
+      state.deck = KANJI[state.level].filter(k => keys.includes(k.kanji));
     } else {
-      state.deck = getKanjiByGroup(state.level, state.kanjiGroup);
+      const pool = getKanjiByGroup(state.level, state.kanjiGroup);
+      state.deck = pool.filter(k => !isMastered('kanji', state.level, k.kanji));
     }
   } else if (state.section === 'grammar') {
     const data = getGrammarLesson(state.level, state.lesson);
@@ -832,8 +870,13 @@ function loadDeck() {
       const keys = reviewList('vocab', state.level);
       const all = getLessons(state.level).flatMap(n => getLessonWords(state.level, n));
       state.deck = all.filter(w => keys.includes(w.jp));
+    } else if (state.lesson === '__mastered__') {
+      const keys = masteredList('vocab', state.level);
+      const all = getLessons(state.level).flatMap(n => getLessonWords(state.level, n));
+      state.deck = all.filter(w => keys.includes(w.jp));
     } else {
-      state.deck = getLessonWords(state.level, state.lesson);
+      const pool = getLessonWords(state.level, state.lesson);
+      state.deck = pool.filter(w => !isMastered('vocab', state.level, w.jp));
     }
   }
   state.idx = 0;
@@ -910,7 +953,10 @@ function renderKanjiFlashcard() {
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
-      <button class="bookmark-btn ${isInReview('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiBookmark(event,'${k.kanji}')" title="Add to review">${isInReview('kanji', state.level, k.kanji) ? '★' : '☆'}</button>
+      <div style="display:flex; gap:0.25rem">
+        <button class="mastered-btn ${isMastered('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiMastered(event,'${k.kanji}')" title="Mark as confident">${isMastered('kanji', state.level, k.kanji) ? '✅' : '✔'}</button>
+        <button class="bookmark-btn ${isInReview('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiBookmark(event,'${k.kanji}')" title="Add to review">${isInReview('kanji', state.level, k.kanji) ? '★' : '☆'}</button>
+      </div>
     </div>`;
   $('kflash').addEventListener('click', () => { state.flipped = !state.flipped; renderKanjiFlashcard(); });
   renderStats();
@@ -989,7 +1035,10 @@ function renderFlashcard() {
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
-      <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')" title="Add to review">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
+      <div style="display:flex; gap:0.25rem">
+        <button class="mastered-btn ${isMastered('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabMastered(event,'${w.jp}')" title="Mark as confident">${isMastered('vocab', state.level, w.jp) ? '✅' : '✔'}</button>
+        <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')" title="Add to review">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
+      </div>
     </div>`;
   $('flashcard').addEventListener('click', () => { state.flipped = !state.flipped; renderFlashcard(); });
   renderStats();
@@ -1163,11 +1212,32 @@ function toggleKanjiBookmark(e, kanji) {
   if (state.mode === 'flashcard') renderKanjiFlashcard();
   else if (state.mode === 'list') renderKanjiList();
 }
+function toggleKanjiMastered(e, kanji) {
+  e.stopPropagation();
+  toggleMastered('kanji', state.level, kanji);
+  if (state.mode === 'flashcard') {
+    loadDeck();
+    if (state.idx >= state.deck.length) state.idx = Math.max(0, state.deck.length - 1);
+    renderKanjiFlashcard();
+  }
+  else if (state.mode === 'list') renderKanjiList();
+}
 
 function toggleVocabBookmark(e, jp) {
   e.stopPropagation();
   toggleReview('vocab', state.level, jp);
   if (state.mode === 'flashcard') renderFlashcard();
+  else if (state.mode === 'list') renderList();
+}
+function toggleVocabMastered(e, jp) {
+  e.stopPropagation();
+  toggleMastered('vocab', state.level, jp);
+  if (state.mode === 'flashcard') {
+    // If we just mastered it, it should be removed from the deck
+    loadDeck(); 
+    if (state.idx >= state.deck.length) state.idx = Math.max(0, state.deck.length - 1);
+    renderFlashcard();
+  }
   else if (state.mode === 'list') renderList();
 }
 
@@ -1297,10 +1367,13 @@ function advanceQuiz() {
 function renderKanjiList() {
   const groups = state.kanjiGroup === '__review__'
     ? ['Review']
+    : state.kanjiGroup === '__mastered__' ? ['Confident']
     : state.kanjiGroup === 'all' ? getKanjiGroups(state.level) : [state.kanjiGroup];
-  const getKanji = g => g === 'Review'
-    ? KANJI[state.level].filter(k => isInReview('kanji', state.level, k.kanji))
-    : getKanjiByGroup(state.level, g);
+  const getKanji = g => {
+    if (g === 'Review') return KANJI[state.level].filter(k => isInReview('kanji', state.level, k.kanji));
+    if (g === 'Confident') return KANJI[state.level].filter(k => isMastered('kanji', state.level, k.kanji));
+    return getKanjiByGroup(state.level, g).filter(k => !isMastered('kanji', state.level, k.kanji));
+  };
   $('content').innerHTML = groups.map(g => {
     const kanji = getKanji(g);
     return `
@@ -1316,7 +1389,10 @@ function renderKanjiList() {
             <div class="muted">${k.on || '—'}</div>
             <div class="muted kimi">${k.imi}</div>
             <div>${k.en}</div>
-            <button class="bookmark-btn ${isInReview('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiBookmark(event,'${k.kanji}')">${isInReview('kanji', state.level, k.kanji) ? '★' : '☆'}</button>
+            <div style="display:flex; gap:0.2rem; justify-content:flex-end">
+              <button class="mastered-btn ${isMastered('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiMastered(event,'${k.kanji}')">${isMastered('kanji', state.level, k.kanji) ? '✅' : '✔'}</button>
+              <button class="bookmark-btn ${isInReview('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiBookmark(event,'${k.kanji}')">${isInReview('kanji', state.level, k.kanji) ? '★' : '☆'}</button>
+            </div>
           </div>`).join('')}
       </div>`;
   }).join('');
@@ -1423,7 +1499,10 @@ function renderList() {
             ${kanaRomaji(w.reading, state.showRomaji, 'muted')}
           </div>
           <div style="font-size:1.05rem">${w.en}</div>
-          <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
+          <div style="display:flex; gap:0.2rem; justify-content:flex-end">
+            <button class="mastered-btn ${isMastered('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabMastered(event,'${w.jp}')">${isMastered('vocab', state.level, w.jp) ? '✅' : '✔'}</button>
+            <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
+          </div>
         </div>`).join('')}
     </div>`).join('');
   renderStats();
