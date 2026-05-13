@@ -638,9 +638,9 @@
   </div>
 </div>
 
-<script src="vocab.js?v=25"></script>
-<script src="kanji.js?v=25"></script>
-<script src="grammar.js?v=25"></script>
+<script src="vocab.js?v=26"></script>
+<script src="kanji.js?v=26"></script>
+<script src="grammar.js?v=26"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -1022,7 +1022,7 @@ function renderKanjiFlashcard() {
         <button class="bookmark-btn ${isInReview('kanji', state.level, k.kanji) ? 'marked' : ''}" onclick="toggleKanjiBookmark(event,'${k.kanji}')" title="Add to review">${isInReview('kanji', state.level, k.kanji) ? '★' : '☆'}</button>
       </div>
     </div>`;
-  $('kflash').addEventListener('click', () => { state.flipped = !state.flipped; renderKanjiFlashcard(); });
+  bindCardFlip('kflash', renderKanjiFlashcard);
   wireNoteArea('kanji', k.kanji);
   renderStats();
 }
@@ -1105,7 +1105,7 @@ function renderFlashcard() {
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
       <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')" title="Add to review">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
     </div>`;
-  $('flashcard').addEventListener('click', () => { state.flipped = !state.flipped; renderFlashcard(); });
+  bindCardFlip('flashcard', renderFlashcard);
   wireNoteArea('vocab', w.jp);
   renderStats();
 }
@@ -1528,7 +1528,7 @@ function renderGrammarFlashcard() {
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
     </div>`;
-  $('gflash').addEventListener('click', () => { state.flipped = !state.flipped; renderGrammarFlashcard(); });
+  bindCardFlip('gflash', renderGrammarFlashcard);
   wireNoteArea('grammar', p.pattern);
   renderStats();
 }
@@ -1828,6 +1828,34 @@ $('showRomaji').checked = state.showRomaji;
 $('quizReverse').checked = state.quiz.reverse;
 let touchStartX = 0;
 let touchStartY = 0;
+function bindCardFlip(id, renderFn) {
+  const el = $(id);
+  if (!el) return;
+  let downTime = 0;
+  let downX = 0;
+  let downY = 0;
+  let isDown = false;
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    isDown = true;
+    downTime = Date.now();
+    downX = e.clientX;
+    downY = e.clientY;
+  });
+  el.addEventListener('pointerup', e => {
+    if (!isDown) return;
+    isDown = false;
+    const duration = Date.now() - downTime;
+    const dx = Math.abs(e.clientX - downX);
+    const dy = Math.abs(e.clientY - downY);
+    if (duration < 250 && dx < 15 && dy < 15) {
+      if (e.target.closest('button, textarea, select, a')) return;
+      state.flipped = !state.flipped;
+      renderFn();
+    }
+  });
+  el.addEventListener('pointercancel', () => isDown = false);
+}
 function setupSwipes() {
   const content = $('content');
   content.addEventListener('touchstart', e => {
