@@ -638,9 +638,9 @@
   </div>
 </div>
 
-<script src="vocab.js?v=26"></script>
-<script src="kanji.js?v=26"></script>
-<script src="grammar.js?v=26"></script>
+<script src="vocab.js?v=27"></script>
+<script src="kanji.js?v=27"></script>
+<script src="grammar.js?v=27"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -1873,11 +1873,6 @@ function setupSwipes() {
     if (Math.abs(dx) > Math.abs(dy)) {
       if (Math.abs(dx) > 50) {
         if (dx < 0) nextCard(); else prevCard();
-      }
-    } else {
-      if (Math.abs(dy) > 50) {
-        state.flipped = !state.flipped;
-        renderCurrentFlashcard();
       }
     }
   }, { passive: true });
