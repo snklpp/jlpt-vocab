@@ -933,7 +933,11 @@ function loadDeck() {
       state.deck = getLessonWords(state.level, state.lesson);
     }
   }
-  state.idx = 0;
+  const progKey2 = state.section === 'kanji'
+    ? `kanji_${state.level}_${state.kanjiGroup}`
+    : progKey(state.level, state.lesson);
+  const savedIdx = (state.progress[progKey2] || {}).cardIdx || 0;
+  state.idx = Math.min(savedIdx, Math.max(0, state.deck.length - 1));
   state.flipped = false;
 }
 
