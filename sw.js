@@ -1,8 +1,8 @@
-const CACHE_NAME = 'jlpt-study-v20';
+const CACHE_NAME = 'jlpt-study-v21';
 const ASSETS = [
   './',
   './index.html',
-  './vocab.js?v=16',
+  './vocab.js?v=17',
   './kanji.js?v=18',
   './grammar.js?v=1',
   './icon-512.png'
