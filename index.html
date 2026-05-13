@@ -512,6 +512,18 @@
   }
   .note-save-btn:hover { border-color: var(--accent); color: var(--accent); }
   .note-save-btn.saved { border-color: var(--good); color: var(--good); background: var(--good-soft); }
+
+  /* ── Kana list ── */
+  .kana-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 0.5rem; margin-bottom: 1.25rem; }
+  .kana-cell {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0.85rem 0.5rem; gap: 0.25rem;
+    transition: border-color 0.12s;
+  }
+  .kana-cell:hover { border-color: var(--accent); }
+  .kana-char { font-size: 2.1rem; font-weight: 700; line-height: 1; }
+  .kana-romaji { font-size: 0.7rem; color: var(--muted); font-weight: 700; letter-spacing: 0.04em; }
 </style>
 </head>
 <body>
@@ -542,6 +554,8 @@
       <button class="chip active" data-sec="vocab">語彙 Vocab</button>
       <button class="chip" data-sec="kanji">漢字 Kanji</button>
       <button class="chip" data-sec="grammar">文法 Grammar</button>
+      <button class="chip" data-sec="hiragana">ひ Hiragana</button>
+      <button class="chip" data-sec="katakana">カ Katakana</button>
     </div>
     <div class="divider"></div>
     <div class="chip-group">
@@ -583,6 +597,8 @@
       <button class="chip" data-sec="vocab">語彙 Vocab</button>
       <button class="chip" data-sec="kanji">漢字 Kanji</button>
       <button class="chip" data-sec="grammar">文法 Grammar</button>
+      <button class="chip" data-sec="hiragana">ひ Hiragana</button>
+      <button class="chip" data-sec="katakana">カ Katakana</button>
     </div>
   </div>
   <div class="divider"></div>
@@ -737,6 +753,7 @@ function saveSession() {
     section: state.section,
     lesson: state.lesson,
     kanjiGroup: state.kanjiGroup,
+    kanaGroup: state.kanaGroup,
     mode: state.mode,
     showRomaji: state.showRomaji,
     quizReverse: state.quiz.reverse,
@@ -745,12 +762,89 @@ function saveSession() {
   localStorage.setItem('jlpt_session', JSON.stringify(session));
 }
 
+// ── Kana data ──
+const KANA_GROUPS = {
+  hiragana: [
+    { id: 'basic', name: 'Basic 清音', chars: [
+      {char:'あ',romaji:'a'},{char:'い',romaji:'i'},{char:'う',romaji:'u'},{char:'え',romaji:'e'},{char:'お',romaji:'o'},
+      {char:'か',romaji:'ka'},{char:'き',romaji:'ki'},{char:'く',romaji:'ku'},{char:'け',romaji:'ke'},{char:'こ',romaji:'ko'},
+      {char:'さ',romaji:'sa'},{char:'し',romaji:'shi'},{char:'す',romaji:'su'},{char:'せ',romaji:'se'},{char:'そ',romaji:'so'},
+      {char:'た',romaji:'ta'},{char:'ち',romaji:'chi'},{char:'つ',romaji:'tsu'},{char:'て',romaji:'te'},{char:'と',romaji:'to'},
+      {char:'な',romaji:'na'},{char:'に',romaji:'ni'},{char:'ぬ',romaji:'nu'},{char:'ね',romaji:'ne'},{char:'の',romaji:'no'},
+      {char:'は',romaji:'ha'},{char:'ひ',romaji:'hi'},{char:'ふ',romaji:'fu'},{char:'へ',romaji:'he'},{char:'ほ',romaji:'ho'},
+      {char:'ま',romaji:'ma'},{char:'み',romaji:'mi'},{char:'む',romaji:'mu'},{char:'め',romaji:'me'},{char:'も',romaji:'mo'},
+      {char:'や',romaji:'ya'},{char:'ゆ',romaji:'yu'},{char:'よ',romaji:'yo'},
+      {char:'ら',romaji:'ra'},{char:'り',romaji:'ri'},{char:'る',romaji:'ru'},{char:'れ',romaji:'re'},{char:'ろ',romaji:'ro'},
+      {char:'わ',romaji:'wa'},{char:'を',romaji:'wo'},{char:'ん',romaji:'n'},
+    ]},
+    { id: 'dakuten', name: 'Voiced 濁音', chars: [
+      {char:'が',romaji:'ga'},{char:'ぎ',romaji:'gi'},{char:'ぐ',romaji:'gu'},{char:'げ',romaji:'ge'},{char:'ご',romaji:'go'},
+      {char:'ざ',romaji:'za'},{char:'じ',romaji:'ji'},{char:'ず',romaji:'zu'},{char:'ぜ',romaji:'ze'},{char:'ぞ',romaji:'zo'},
+      {char:'だ',romaji:'da'},{char:'ぢ',romaji:'di'},{char:'づ',romaji:'du'},{char:'で',romaji:'de'},{char:'ど',romaji:'do'},
+      {char:'ば',romaji:'ba'},{char:'び',romaji:'bi'},{char:'ぶ',romaji:'bu'},{char:'べ',romaji:'be'},{char:'ぼ',romaji:'bo'},
+    ]},
+    { id: 'handakuten', name: 'Semi-voiced 半濁音', chars: [
+      {char:'ぱ',romaji:'pa'},{char:'ぴ',romaji:'pi'},{char:'ぷ',romaji:'pu'},{char:'ぺ',romaji:'pe'},{char:'ぽ',romaji:'po'},
+    ]},
+    { id: 'combinations', name: 'Combinations 拗音', chars: [
+      {char:'きゃ',romaji:'kya'},{char:'きゅ',romaji:'kyu'},{char:'きょ',romaji:'kyo'},
+      {char:'しゃ',romaji:'sha'},{char:'しゅ',romaji:'shu'},{char:'しょ',romaji:'sho'},
+      {char:'ちゃ',romaji:'cha'},{char:'ちゅ',romaji:'chu'},{char:'ちょ',romaji:'cho'},
+      {char:'にゃ',romaji:'nya'},{char:'にゅ',romaji:'nyu'},{char:'にょ',romaji:'nyo'},
+      {char:'ひゃ',romaji:'hya'},{char:'ひゅ',romaji:'hyu'},{char:'ひょ',romaji:'hyo'},
+      {char:'みゃ',romaji:'mya'},{char:'みゅ',romaji:'myu'},{char:'みょ',romaji:'myo'},
+      {char:'りゃ',romaji:'rya'},{char:'りゅ',romaji:'ryu'},{char:'りょ',romaji:'ryo'},
+      {char:'ぎゃ',romaji:'gya'},{char:'ぎゅ',romaji:'gyu'},{char:'ぎょ',romaji:'gyo'},
+      {char:'じゃ',romaji:'ja'},{char:'じゅ',romaji:'ju'},{char:'じょ',romaji:'jo'},
+      {char:'びゃ',romaji:'bya'},{char:'びゅ',romaji:'byu'},{char:'びょ',romaji:'byo'},
+      {char:'ぴゃ',romaji:'pya'},{char:'ぴゅ',romaji:'pyu'},{char:'ぴょ',romaji:'pyo'},
+    ]},
+  ],
+  katakana: [
+    { id: 'basic', name: 'Basic 清音', chars: [
+      {char:'ア',romaji:'a'},{char:'イ',romaji:'i'},{char:'ウ',romaji:'u'},{char:'エ',romaji:'e'},{char:'オ',romaji:'o'},
+      {char:'カ',romaji:'ka'},{char:'キ',romaji:'ki'},{char:'ク',romaji:'ku'},{char:'ケ',romaji:'ke'},{char:'コ',romaji:'ko'},
+      {char:'サ',romaji:'sa'},{char:'シ',romaji:'shi'},{char:'ス',romaji:'su'},{char:'セ',romaji:'se'},{char:'ソ',romaji:'so'},
+      {char:'タ',romaji:'ta'},{char:'チ',romaji:'chi'},{char:'ツ',romaji:'tsu'},{char:'テ',romaji:'te'},{char:'ト',romaji:'to'},
+      {char:'ナ',romaji:'na'},{char:'ニ',romaji:'ni'},{char:'ヌ',romaji:'nu'},{char:'ネ',romaji:'ne'},{char:'ノ',romaji:'no'},
+      {char:'ハ',romaji:'ha'},{char:'ヒ',romaji:'hi'},{char:'フ',romaji:'fu'},{char:'ヘ',romaji:'he'},{char:'ホ',romaji:'ho'},
+      {char:'マ',romaji:'ma'},{char:'ミ',romaji:'mi'},{char:'ム',romaji:'mu'},{char:'メ',romaji:'me'},{char:'モ',romaji:'mo'},
+      {char:'ヤ',romaji:'ya'},{char:'ユ',romaji:'yu'},{char:'ヨ',romaji:'yo'},
+      {char:'ラ',romaji:'ra'},{char:'リ',romaji:'ri'},{char:'ル',romaji:'ru'},{char:'レ',romaji:'re'},{char:'ロ',romaji:'ro'},
+      {char:'ワ',romaji:'wa'},{char:'ヲ',romaji:'wo'},{char:'ン',romaji:'n'},
+    ]},
+    { id: 'dakuten', name: 'Voiced 濁音', chars: [
+      {char:'ガ',romaji:'ga'},{char:'ギ',romaji:'gi'},{char:'グ',romaji:'gu'},{char:'ゲ',romaji:'ge'},{char:'ゴ',romaji:'go'},
+      {char:'ザ',romaji:'za'},{char:'ジ',romaji:'ji'},{char:'ズ',romaji:'zu'},{char:'ゼ',romaji:'ze'},{char:'ゾ',romaji:'zo'},
+      {char:'ダ',romaji:'da'},{char:'ヂ',romaji:'di'},{char:'ヅ',romaji:'du'},{char:'デ',romaji:'de'},{char:'ド',romaji:'do'},
+      {char:'バ',romaji:'ba'},{char:'ビ',romaji:'bi'},{char:'ブ',romaji:'bu'},{char:'ベ',romaji:'be'},{char:'ボ',romaji:'bo'},
+    ]},
+    { id: 'handakuten', name: 'Semi-voiced 半濁音', chars: [
+      {char:'パ',romaji:'pa'},{char:'ピ',romaji:'pi'},{char:'プ',romaji:'pu'},{char:'ペ',romaji:'pe'},{char:'ポ',romaji:'po'},
+    ]},
+    { id: 'combinations', name: 'Combinations 拗音', chars: [
+      {char:'キャ',romaji:'kya'},{char:'キュ',romaji:'kyu'},{char:'キョ',romaji:'kyo'},
+      {char:'シャ',romaji:'sha'},{char:'シュ',romaji:'shu'},{char:'ショ',romaji:'sho'},
+      {char:'チャ',romaji:'cha'},{char:'チュ',romaji:'chu'},{char:'チョ',romaji:'cho'},
+      {char:'ニャ',romaji:'nya'},{char:'ニュ',romaji:'nyu'},{char:'ニョ',romaji:'nyo'},
+      {char:'ヒャ',romaji:'hya'},{char:'ヒュ',romaji:'hyu'},{char:'ヒョ',romaji:'hyo'},
+      {char:'ミャ',romaji:'mya'},{char:'ミュ',romaji:'myu'},{char:'ミョ',romaji:'myo'},
+      {char:'リャ',romaji:'rya'},{char:'リュ',romaji:'ryu'},{char:'リョ',romaji:'ryo'},
+      {char:'ギャ',romaji:'gya'},{char:'ギュ',romaji:'gyu'},{char:'ギョ',romaji:'gyo'},
+      {char:'ジャ',romaji:'ja'},{char:'ジュ',romaji:'ju'},{char:'ジョ',romaji:'jo'},
+      {char:'ビャ',romaji:'bya'},{char:'ビュ',romaji:'byu'},{char:'ビョ',romaji:'byo'},
+      {char:'ピャ',romaji:'pya'},{char:'ピュ',romaji:'pyu'},{char:'ピョ',romaji:'pyo'},
+    ]},
+  ],
+};
+
 const session = loadSession();
 const state = {
   section: session.section || 'vocab',
   level: session.level || 'N5',
   lesson: session.lesson || 1,
   kanjiGroup: session.kanjiGroup || 'all',
+  kanaGroup: session.kanaGroup || 'basic',
   mode: session.mode || 'flashcard',
   idx: 0,
   flipped: false,
@@ -878,8 +972,23 @@ function shuffleArr(a) {
   return arr;
 }
 
+function isKana() { return state.section === 'hiragana' || state.section === 'katakana'; }
+function deckKey() {
+  if (state.section === 'kanji') return `kanji_${state.level}_${state.kanjiGroup}`;
+  if (isKana()) return `kana_${state.section}_${state.kanaGroup}`;
+  return progKey(state.level, state.lesson);
+}
+
 // ── Lesson / group select ──
 function buildLessonSelect() {
+  if (isKana()) {
+    const groups = KANA_GROUPS[state.section];
+    const total = groups.reduce((s, g) => s + g.chars.length, 0);
+    $('lesson').innerHTML = `<option value="all">All (${total})</option>` +
+      groups.map(g => `<option value="${g.id}">${g.name} (${g.chars.length})</option>`).join('');
+    $('lesson').value = state.kanaGroup;
+    return;
+  }
   if (state.section === 'kanji') {
     const groups = getKanjiGroups(state.level);
     const rc = reviewCount('kanji', state.level);
@@ -917,7 +1026,12 @@ function buildLessonSelect() {
 }
 
 function loadDeck() {
-  if (state.section === 'kanji') {
+  if (isKana()) {
+    const groups = KANA_GROUPS[state.section];
+    state.deck = state.kanaGroup === 'all'
+      ? groups.flatMap(g => g.chars)
+      : (groups.find(g => g.id === state.kanaGroup)?.chars || []);
+  } else if (state.section === 'kanji') {
     if (state.kanjiGroup === '__review__') {
       const keys = reviewList('kanji', state.level);
       state.deck = KANJI[state.level].filter(k => keys.includes(k.kanji));
@@ -939,10 +1053,7 @@ function loadDeck() {
       state.deck = getLessonWords(state.level, state.lesson);
     }
   }
-  const progKey2 = state.section === 'kanji'
-    ? `kanji_${state.level}_${state.kanjiGroup}`
-    : progKey(state.level, state.lesson);
-  const savedIdx = (state.progress[progKey2] || {}).cardIdx || 0;
+  const savedIdx = (state.progress[deckKey()] || {}).cardIdx || 0;
   state.idx = Math.min(savedIdx, Math.max(0, state.deck.length - 1));
   state.flipped = false;
 }
@@ -950,7 +1061,7 @@ function loadDeck() {
 // ── Stats / progress bar ──
 function renderStats() {
   const total = state.deck.length;
-  const unit = state.section === 'kanji' ? 'kanji' : state.section === 'grammar' ? 'patterns' : 'words';
+  const unit = state.section === 'kanji' ? 'kanji' : state.section === 'grammar' ? 'patterns' : isKana() ? 'characters' : 'words';
   if (state.mode === 'list') {
     $('stats').innerHTML = `<span><strong>${total}</strong> ${unit}</span>`;
     $('progressFill').style.width = '0%';
@@ -1117,38 +1228,190 @@ function renderFlashcard() {
   renderStats();
 }
 
+// ── Kana flashcard ──
+function renderKanaFlashcard() {
+  if (state.deck.length === 0) {
+    $('content').innerHTML = `<div class="empty">No characters in this group.</div>`; return;
+  }
+  if (state.idx >= state.deck.length) {
+    $('content').innerHTML = `
+      <div class="summary animate-in">
+        <div class="summary-title">Group complete!</div>
+        <div class="summary-score">✓</div>
+        <div class="summary-sub">Reviewed all ${state.deck.length} characters.</div>
+        <div class="btn-group"><button class="btn primary" onclick="restartDeck()">Review again</button></div>
+      </div>`;
+    $('progressFill').style.width = '100%';
+    return;
+  }
+  const c = state.deck[state.idx];
+  $('content').innerHTML = `
+    <div class="flashcard-scene animate-in">
+      <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="kanaFlash">
+        <div class="card-face front">
+          <div style="font-size:7rem; font-weight:700; line-height:1; margin:auto">${c.char}</div>
+          <div class="tap-hint">tap to reveal</div>
+        </div>
+        <div class="card-face back">
+          <div style="font-size:4.5rem; font-weight:700; line-height:1; margin-bottom:0.75rem">${c.char}</div>
+          <div style="font-size:2.75rem; font-weight:800; color:var(--accent); letter-spacing:0.06em">${c.romaji}</div>
+        </div>
+      </div>
+    </div>
+    ${noteAreaHTML(state.section, c.char)}
+    <div class="card-nav">
+      <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
+      <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
+      <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
+    </div>`;
+  bindCardFlip('kanaFlash', renderKanaFlashcard);
+  wireNoteArea(state.section, c.char);
+  renderStats();
+}
+
+// ── Kana list ──
+function renderKanaList() {
+  const groups = state.kanaGroup === 'all'
+    ? KANA_GROUPS[state.section]
+    : KANA_GROUPS[state.section].filter(g => g.id === state.kanaGroup);
+  $('content').innerHTML = groups.map(g => `
+    <div class="list-group-header">${g.name}</div>
+    <div class="kana-grid">
+      ${g.chars.map(c => `
+        <div class="kana-cell">
+          <div class="kana-char">${c.char}</div>
+          <div class="kana-romaji">${c.romaji}</div>
+        </div>`).join('')}
+    </div>
+  `).join('');
+  renderStats();
+}
+
+// ── Kana quiz ──
+function startKanaQuiz() {
+  const key = deckKey();
+  const p = state.progress[key] || {};
+  if (p.quizState && p.quizState.idx < p.quizState.total && p.quizState.reverse === state.quiz.reverse) {
+    state.quiz = p.quizState;
+  } else {
+    if (state.deck.length < 4) {
+      $('content').innerHTML = `<div class="empty">Need at least 4 characters for quiz.</div>`; return;
+    }
+    const order = shuffleArr([...state.deck]);
+    state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: state.quiz.reverse, options: [] };
+    state.progress[key] = { ...p, quizState: state.quiz };
+    saveProgress();
+  }
+  renderKanaQuestion();
+}
+function renderKanaQuestion() {
+  if (state.quiz.idx >= state.quiz.total) {
+    const pct = Math.round((state.quiz.score / state.quiz.total) * 100);
+    const msg = pct >= 90 ? '素晴らしい!' : pct >= 70 ? 'よくできました!' : pct >= 50 ? 'がんばって!' : 'もう一度!';
+    $('content').innerHTML = `
+      <div class="summary animate-in">
+        <div class="summary-title">${msg}</div>
+        <div class="summary-score">${pct}%</div>
+        <div class="summary-sub">${state.quiz.score} / ${state.quiz.total} correct</div>
+        <div class="btn-group"><button class="btn primary" onclick="startKanaQuiz()">Try again</button></div>
+      </div>`;
+    $('progressFill').style.width = '100%';
+    return;
+  }
+  const q = state.quiz.order[state.quiz.idx];
+  if (!state.quiz.options || state.quiz.options.length === 0) {
+    const allChars = KANA_GROUPS[state.section].flatMap(g => g.chars);
+    const pool = allChars.filter(c => c.char !== q.char);
+    const distractors = shuffleArr(pool).slice(0, 3);
+    state.quiz.options = shuffleArr([q, ...distractors]);
+  }
+  const opts = state.quiz.options;
+  const reverse = state.quiz.reverse;
+  $('content').innerHTML = `
+    <div class="quiz-wrap animate-in">
+      ${reverse
+        ? `<div class="quiz-word text" style="font-size:2.5rem;letter-spacing:0.08em">${q.romaji}</div>`
+        : `<div class="quiz-word">${q.char}</div>`}
+      <div class="quiz-options" id="qOpts">
+        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">
+          ${reverse
+            ? `<div class="qopt-jp">${o.char}</div>`
+            : `<div class="qopt-en" style="font-size:1.15rem;font-weight:700;letter-spacing:0.04em">${o.romaji}</div>`}
+        </button>`).join('')}
+      </div>
+    </div>`;
+  $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
+    btn.addEventListener('click', () => answerKanaQuiz(parseInt(btn.dataset.i)))
+  );
+  renderStats();
+}
+function answerKanaQuiz(i) {
+  if (state.quiz.answered) return;
+  state.quiz.answered = true;
+  const q = state.quiz.order[state.quiz.idx];
+  const picked = state.quiz.options[i];
+  const correctIdx = state.quiz.options.findIndex(o => o.char === q.char);
+  $('qOpts').querySelectorAll('.quiz-option').forEach((b, bi) => {
+    b.disabled = true;
+    if (bi === correctIdx) b.classList.add('correct');
+    else if (bi === i) b.classList.add('wrong');
+  });
+  const isCorrect = picked.char === q.char;
+  if (isCorrect) { haptic([15, 30, 20]); state.quiz.score++; }
+  else { haptic([40, 40, 40, 40, 40]); }
+  const nextBtn = `<button class="btn primary" style="margin-top:1rem;width:100%" onclick="advanceKanaQuiz()">Next →</button>`;
+  const feedbackHTML = isCorrect
+    ? `<div class="quiz-feedback good">✓ Correct!</div>${nextBtn}`
+    : `<div class="quiz-feedback bad">✗ Answer: <strong>${q.char}</strong> = ${q.romaji}</div>${nextBtn}`;
+  const key = deckKey();
+  if (!state.progress[key]) state.progress[key] = {};
+  state.progress[key].quizState = state.quiz;
+  saveProgress();
+  renderStats();
+  setTimeout(() => { $('qOpts').innerHTML = feedbackHTML; }, 500);
+}
+function advanceKanaQuiz() {
+  state.quiz.idx++;
+  state.quiz.options = [];
+  const key = deckKey();
+  if (state.progress[key]) state.progress[key].quizState = state.quiz;
+  saveProgress();
+  renderKanaQuestion();
+}
+
 function renderCurrentFlashcard() {
   if (state.section === 'kanji') renderKanjiFlashcard();
   else if (state.section === 'grammar') renderGrammarFlashcard();
+  else if (isKana()) renderKanaFlashcard();
   else renderFlashcard();
 }
 function prevCard() {
   haptic(10);
-  if (state.idx > 0) { 
-    state.idx--; state.flipped = false; 
-    const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  if (state.idx > 0) {
+    state.idx--; state.flipped = false;
+    const key = deckKey();
     state.progress[key] = { ...(state.progress[key] || {}), cardIdx: state.idx };
     saveProgress();
-    renderCurrentFlashcard(); 
+    renderCurrentFlashcard();
   }
 }
 function nextCard() {
-  if (!state.flipped) { 
-    haptic(25); // Reveal is a bigger action
-    state.flipped = true; 
-    renderCurrentFlashcard(); 
-    return; 
+  if (!state.flipped) {
+    haptic(25);
+    state.flipped = true;
+    renderCurrentFlashcard();
+    return;
   }
-  haptic(10); // Simple next is light
-  state.idx++; state.flipped = false; 
-  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  haptic(10);
+  state.idx++; state.flipped = false;
+  const key = deckKey();
   state.progress[key] = { ...(state.progress[key] || {}), cardIdx: state.idx };
   saveProgress();
   renderCurrentFlashcard();
 }
 function restartDeck() {
-  haptic(50); // Heavy pulse for reset
-  const key = state.section === 'kanji' ? `kanji_${state.level}_${state.kanjiGroup}` : progKey(state.level, state.lesson);
+  haptic(50);
+  const key = deckKey();
   if (state.progress[key]) {
     delete state.progress[key].cardIdx;
     delete state.progress[key].shuffledDeck;
@@ -1157,7 +1420,11 @@ function restartDeck() {
   }
   loadDeck();
   if (state.mode === 'flashcard') renderCurrentFlashcard();
-  else if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
+  else if (state.mode === 'quiz') {
+    if (state.section === 'kanji') startKanjiQuiz();
+    else if (isKana()) startKanaQuiz();
+    else startQuiz();
+  }
 }
 function nextLesson() {
   haptic([30, 40, 30]); // Success pattern
@@ -1667,10 +1934,11 @@ function confirmReset() {
 // ── Mode / section switching ──
 function switchMode(m) {
   if (state.section === 'grammar' && m === 'quiz') m = 'list';
+  if (isKana() && m === 'stats') m = 'flashcard';
   state.mode = m;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
   $('quizDirWrap').style.display = m === 'quiz' ? 'inline-flex' : 'none';
-  $('romajiWrap').style.display = (state.section === 'kanji' || state.section === 'grammar') ? 'none' : 'inline-flex';
+  $('romajiWrap').style.display = (state.section === 'kanji' || state.section === 'grammar' || isKana()) ? 'none' : 'inline-flex';
   loadDeck();
   saveSession();
 
@@ -1686,6 +1954,10 @@ function switchMode(m) {
   } else if (state.section === 'grammar') {
     if (m === 'flashcard') renderGrammarFlashcard();
     else renderGrammarList();
+  } else if (isKana()) {
+    if (m === 'flashcard') renderKanaFlashcard();
+    else if (m === 'quiz') startKanaQuiz();
+    else renderKanaList();
   } else {
     if (m === 'flashcard') renderFlashcard();
     else if (m === 'quiz') startQuiz();
@@ -1698,7 +1970,12 @@ function switchSection(sec) {
   state.section = sec;
   document.querySelectorAll('[data-sec]').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
   state.kanjiGroup = 'all';
-  if (sec === 'grammar') {
+  const kana = sec === 'hiragana' || sec === 'katakana';
+  $('level').style.display = kana ? 'none' : '';
+  if (kana) {
+    state.kanaGroup = 'basic';
+    if (state.mode === 'stats') state.mode = 'flashcard';
+  } else if (sec === 'grammar') {
     const gLessons = getGrammarLessons(state.level);
     if (gLessons.length > 0 && !gLessons.includes(Number(state.lesson))) state.lesson = gLessons[0];
     if (state.mode === 'quiz') state.mode = 'list';
@@ -1715,6 +1992,8 @@ function openDrawer() {
   $('drawer').classList.add('active');
   $('drawerOverlay').classList.add('active');
   // Sync selects
+  const kana = isKana();
+  $('drawerLevel').style.display = kana ? 'none' : '';
   $('drawerLevel').innerHTML = $('level').innerHTML;
   $('drawerLevel').value = $('level').value;
   $('drawerLesson').innerHTML = $('lesson').innerHTML;
@@ -1722,7 +2001,7 @@ function openDrawer() {
   // Sync drawer controls
   $('drawerShowRomaji').checked = state.showRomaji === true || state.showRomaji === 'all';
   $('drawerQuizReverse').checked = state.quiz.reverse;
-  $('drawerRomajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
+  $('drawerRomajiWrap').style.display = (state.section === 'kanji' || kana) ? 'none' : 'inline-flex';
   $('drawerQuizDirWrap').style.display = state.mode === 'quiz' ? 'inline-flex' : 'none';
   $('fontScaleSlider').value = state.fontScale;
 }
@@ -1737,13 +2016,14 @@ $('level').addEventListener('change', e => {
   state.level = e.target.value;
   state.stats = loadLevelStats(state.level);
   if (state.section === 'kanji') state.kanjiGroup = 'all';
-  else state.lesson = getLessons(state.level)[0];
+  else if (!isKana()) state.lesson = getLessons(state.level)[0];
   buildLessonSelect();
   switchMode(state.mode);
   saveSession();
 });
 $('lesson').addEventListener('change', e => {
   if (state.section === 'kanji') state.kanjiGroup = e.target.value;
+  else if (isKana()) state.kanaGroup = e.target.value;
   else {
     const v = e.target.value;
     state.lesson = v === '__review__' ? '__review__' : parseInt(v, 10);
@@ -1756,14 +2036,14 @@ document.querySelectorAll('[data-sec]').forEach(b => b.addEventListener('click',
 $('showRomaji').addEventListener('change', e => {
   state.showRomaji = e.target.checked ? 'all' : 'kana';
   if (state.mode === 'flashcard') renderCurrentFlashcard();
-  else if (state.mode === 'quiz') { if (state.section === 'kanji') renderKanjiQuestion(); else renderQuizQuestion(); }
-  else if (state.mode === 'list') { if (state.section === 'kanji') renderKanjiList(); else renderList(); }
+  else if (state.mode === 'quiz') { if (state.section === 'kanji') renderKanjiQuestion(); else if (isKana()) renderKanaQuestion(); else renderQuizQuestion(); }
+  else if (state.mode === 'list') { if (state.section === 'kanji') renderKanjiList(); else if (isKana()) renderKanaList(); else renderList(); }
   saveSession();
   updateRomajiBtn();
 });
 $('quizReverse').addEventListener('change', e => {
   state.quiz.reverse = e.target.checked;
-  if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else startQuiz(); }
+  if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else if (isKana()) startKanaQuiz(); else startQuiz(); }
   saveSession();
 });
 $('drawerShowRomaji').addEventListener('change', e => {
@@ -1821,13 +2101,15 @@ $('romajiBtn').addEventListener('click', () => {
   if ($('drawerShowRomaji')) $('drawerShowRomaji').checked = state.showRomaji === 'all' || state.showRomaji === true;
   
   if (state.mode === 'flashcard') renderCurrentFlashcard();
-  else if (state.mode === 'quiz') { 
-    if (state.section === 'kanji') renderKanjiQuestion(); 
-    else renderQuizQuestion(); 
+  else if (state.mode === 'quiz') {
+    if (state.section === 'kanji') renderKanjiQuestion();
+    else if (isKana()) renderKanaQuestion();
+    else renderQuizQuestion();
   }
-  else if (state.mode === 'list') { 
-    if (state.section === 'kanji') renderKanjiList(); 
-    else renderList(); 
+  else if (state.mode === 'list') {
+    if (state.section === 'kanji') renderKanjiList();
+    else if (isKana()) renderKanaList();
+    else renderList();
   }
   else if (state.mode === 'stats') renderStatsPanel();
   
@@ -1929,6 +2211,9 @@ function setupSwipes() {
   }, { passive: true });
 }
 
+// Restore section active chip and level visibility on load
+document.querySelectorAll('[data-sec]').forEach(b => b.classList.toggle('active', b.dataset.sec === state.section));
+if (isKana()) $('level').style.display = 'none';
 buildLessonSelect();
 setupSwipes();
 switchMode(state.mode);

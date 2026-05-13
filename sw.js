@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jlpt-study-v31';
+const CACHE_NAME = 'jlpt-study-v32';
 const ASSETS = [
   './',
   './index.html',
