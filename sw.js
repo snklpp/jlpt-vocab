@@ -3,7 +3,7 @@ const ASSETS = [
   './',
   './index.html',
   './vocab.js?v=17',
-  './kanji.js?v=18',
+  './kanji.js?v=19',
   './grammar.js?v=1',
   './icon-512.png'
 ];
