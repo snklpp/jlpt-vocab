@@ -638,9 +638,9 @@
   </div>
 </div>
 
-<script src="vocab.js?v=27"></script>
-<script src="kanji.js?v=27"></script>
-<script src="grammar.js?v=27"></script>
+<script src="vocab.js?v=28"></script>
+<script src="kanji.js?v=28"></script>
+<script src="grammar.js?v=28"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -988,12 +988,12 @@ function renderKanjiFlashcard() {
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="kflash">
         <div class="card-face front">
           ${getItemStats(k.kanji)}
-          <div class="kanji-char">${k.kanji}</div>
+          <div class="kanji-char" title="Click to copy">${k.kanji}</div>
           <div class="tap-hint">tap to reveal</div>
         </div>
         <div class="card-face back">
           ${getItemStats(k.kanji)}
-          <div class="kanji-char" style="font-size:4rem;margin-bottom:0.5rem">${k.kanji}</div>
+          <div class="kanji-char" style="font-size:4rem;margin-bottom:0.5rem" title="Click to copy">${k.kanji}</div>
           <div class="kanji-readings">
             ${k.kun ? `<div class="kanji-reading-block">
               <span class="kanji-reading-label">くんよみ</span>
@@ -1084,12 +1084,12 @@ function renderFlashcard() {
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="flashcard">
         <div class="card-face front">
           ${getItemStats(w.jp)}
-          <div class="card-jp">${w.jp}</div>
+          <div class="card-jp" title="Click to copy">${w.jp}</div>
           <div class="tap-hint">tap to reveal</div>
         </div>
         <div class="card-face back">
           ${getItemStats(w.jp)}
-          <div class="card-jp" style="font-size:2.4rem;margin-bottom:0.3rem">${w.jp}</div>
+          <div class="card-jp" style="font-size:2.4rem;margin-bottom:0.3rem" title="Click to copy">${w.jp}</div>
           <div class="reading-romaji-stack">
             ${kanaRomaji(w.reading, state.showRomaji)}
           </div>
@@ -1503,12 +1503,12 @@ function renderGrammarFlashcard() {
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="gflash">
         <div class="card-face front" style="gap:0.5rem">
           <div class="card-cat">Lesson ${state.lesson} · 文法</div>
-          <div style="font-size:1.7rem;font-weight:700;line-height:1.4;text-align:center">${p.pattern}</div>
+          <div class="copy-word" style="font-size:1.7rem;font-weight:700;line-height:1.4;text-align:center" title="Click to copy">${p.pattern}</div>
           ${p.romaji ? `<div style="font-size:0.88rem;color:var(--muted);font-style:italic">${p.romaji}</div>` : ''}
           <div class="tap-hint">tap to reveal</div>
         </div>
         <div class="card-face back" style="padding:1.5rem 1.25rem;justify-content:flex-start;overflow-y:auto">
-          <div style="font-size:1.25rem;font-weight:700;margin-bottom:0.3rem;text-align:center;width:100%">${p.pattern}</div>
+          <div class="copy-word" style="font-size:1.25rem;font-weight:700;margin-bottom:0.3rem;text-align:center;width:100%" title="Click to copy">${p.pattern}</div>
           <div style="font-size:1rem;font-weight:600;color:var(--accent);margin-bottom:0.75rem;text-align:center;width:100%">${p.meaning}</div>
           <div style="font-size:0.78rem;background:var(--surface);border-left:3px solid var(--accent);border-radius:6px;padding:0.4rem 0.65rem;margin-bottom:0.7rem;color:var(--muted);font-family:monospace;line-height:1.5;width:100%;box-sizing:border-box">${p.structure}</div>
           <div style="font-size:0.88rem;line-height:1.65;color:var(--muted);margin-bottom:0.75rem;text-align:left;width:100%">${p.explanation}</div>
@@ -1850,6 +1850,20 @@ function bindCardFlip(id, renderFn) {
     const dy = Math.abs(e.clientY - downY);
     if (duration < 250 && dx < 15 && dy < 15) {
       if (e.target.closest('button, textarea, select, a')) return;
+      
+      const copyTarget = e.target.closest('.kanji-char, .card-jp, .copy-word');
+      if (copyTarget) {
+        const text = copyTarget.dataset.copy || copyTarget.textContent.trim();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(() => {});
+          haptic([10, 30, 10]);
+          const origColor = copyTarget.style.color;
+          copyTarget.style.color = 'var(--good)';
+          setTimeout(() => copyTarget.style.color = origColor, 300);
+        }
+        return;
+      }
+      
       state.flipped = !state.flipped;
       renderFn();
     }
