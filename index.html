@@ -306,20 +306,25 @@
   .quiz-word.text { font-size: 2.5rem; }
   .quiz-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.75rem; }
   .quiz-options {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
-    max-width: 540px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+    max-width: 540px; margin: 1.25rem auto 0;
   }
-  @media (max-width: 480px) { .quiz-options { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .quiz-options { grid-template-columns: 1fr 1fr; } }
   .quiz-option {
-    text-align: left; padding: 1.1rem 1.25rem; font-size: 1.1rem;
-    border: 1.5px solid var(--border); border-radius: 12px;
-    background: var(--card); cursor: pointer;
+    text-align: center; padding: 1rem 0.75rem; font-size: 1rem;
+    border: 1.5px solid var(--border); border-radius: 14px;
+    background: var(--card); cursor: pointer; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    min-height: 72px; gap: 0.2rem;
     transition: all 0.15s var(--ease); font: inherit; color: var(--ink);
   }
-  .quiz-option:hover:not(:disabled) { border-color: var(--ink); background: var(--surface); }
+  .quiz-option:hover:not(:disabled) { border-color: var(--accent); background: var(--surface); transform: translateY(-1px); }
   .quiz-option.correct { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 700; }
   .quiz-option.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
-  .quiz-option:disabled { cursor: default; }
+  .quiz-option:disabled { cursor: default; transform: none; }
+  .qopt-jp { font-size: 1.45rem; font-weight: 700; line-height: 1.2; }
+  .qopt-reading { font-size: 0.76rem; color: var(--muted); margin-top: 0.15rem; }
+  .qopt-en { font-size: 0.95rem; line-height: 1.4; }
   .quiz-feedback {
     margin-top: 1rem; padding: 0.75rem 1.25rem; border-radius: 8px;
     font-size: 0.95rem; animation: fadeIn 0.2s;
@@ -1208,11 +1213,12 @@ function renderKanjiQuestion() {
         : `<div class="quiz-word">${q.kanji}</div>
            <div class="quiz-sub">${[q.kun ? 'くん: ' + q.kun : '', q.on ? 'おん: ' + q.on : ''].filter(Boolean).join('　')}</div>`}
       <div class="quiz-options" id="qOpts">
-        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">${
-          reverse
-            ? `<span style="font-size:1.4rem;display:block;margin-bottom:0.15rem">${o.kanji}</span><small style="color:var(--muted);font-size:0.76rem">${o.imi}</small>`
-            : o.en
-        }</button>`).join('')}
+        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">
+          ${reverse
+            ? `<div class="qopt-jp">${o.kanji}</div>
+               <div class="qopt-reading">${o.imi}</div>`
+            : `<div class="qopt-en">${o.en}</div>`}
+        </button>`).join('')}
       </div>
     </div>`;
   $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
@@ -1346,20 +1352,20 @@ function renderQuizQuestion() {
   const opts = state.quiz.options;
   $('content').innerHTML = `
     <div class="quiz-wrap animate-in">
-      <div class="quiz-progress">${state.quiz.idx} / ${state.quiz.total}</div>
       ${reverse
-        ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
+        ? `<div class="quiz-word text">${q.en}</div>`
         : `<div class="quiz-word" style="font-size:3.5rem">${q.jp}</div>
-           <div class="reading-romaji-stack" style="margin-bottom:1.5rem">
+           <div class="reading-romaji-stack" style="margin-bottom:0.5rem">
              ${kanaRomaji(q.reading, state.showRomaji)}
            </div>`}
-        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}" style="text-align:center">
+      <div class="quiz-options" id="qOpts">
+        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">
           ${reverse
-            ? `<div style="font-size:1.4rem; font-weight:700">${o.jp}</div>
-               ${state.showRomaji ? `<div style="font-size:0.85rem; margin-top:0.1rem">${kanaRomaji(o.reading, true, 'muted')}</div>` : ''}`
-            : o.en
-          }
+            ? `<div class="qopt-jp">${o.jp}</div>
+               <div class="qopt-reading">${o.reading}</div>`
+            : `<div class="qopt-en">${o.en}</div>`}
         </button>`).join('')}
+      </div>
     </div>`;
   $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
     btn.addEventListener('click', () => answerQuiz(parseInt(btn.dataset.i)))
