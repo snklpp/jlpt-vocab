@@ -638,9 +638,9 @@
   </div>
 </div>
 
-<script src="vocab.js?v=28"></script>
-<script src="kanji.js?v=28"></script>
-<script src="grammar.js?v=28"></script>
+<script src="vocab.js?v=29"></script>
+<script src="kanji.js?v=29"></script>
+<script src="grammar.js?v=29"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -1242,10 +1242,9 @@ function answerKanjiQuiz(i) {
 
   const isCorrect = picked.kanji === q.kanji;
   const mnemonicHTML = q.mnemonic ? `<div style="margin-top:1rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
-  const nextBtn = `<button class="btn primary" style="margin-top:1rem;width:100%" onclick="advanceKanjiQuiz()">Next →</button>`;
   const feedbackHTML = isCorrect
-    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTML}</div>${nextBtn}`
-    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${mnemonicHTML}</div>${nextBtn}`;
+    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTML}</div>`
+    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.kanji}</strong> (${q.imi}) — ${q.en}${mnemonicHTML}</div>`;
 
   if (isCorrect) {
     haptic([15, 30, 20]);
@@ -1254,6 +1253,8 @@ function answerKanjiQuiz(i) {
   } else {
     haptic([40, 40, 40, 40, 40]);
     state.stats.kanji[q.kanji].incorrect++;
+    state.quiz.order.push(q);
+    state.quiz.total++;
   }
   saveLevelStats();
   const key = `kanji_${state.level}_${state.kanjiGroup}`;
@@ -1261,7 +1262,10 @@ function answerKanjiQuiz(i) {
   saveProgress();
   renderStats();
 
-  setTimeout(() => { $('qOpts').innerHTML = feedbackHTML; }, 500);
+  setTimeout(() => { 
+    $('qOpts').innerHTML = feedbackHTML; 
+    setTimeout(advanceKanjiQuiz, isCorrect ? 1200 : 2500);
+  }, 500);
 }
 
 function advanceKanjiQuiz() {
@@ -1389,10 +1393,9 @@ function answerQuiz(i) {
   const isCorrect = picked.en === q.en;
   const mnemonicHTMLv = q.mnemonic ? `<div style="margin-top:1rem; padding:0.75rem 1rem; background:var(--surface); border-left:3px solid var(--accent); border-radius:8px; font-size:0.8rem; color:var(--muted); text-align:left; line-height:1.6;"><span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; display:block; margin-bottom:0.3rem;">💡 Mnemonic</span>${q.mnemonic}</div>` : '';
   const kbHTML = getKanjiBreakdown(q.jp);
-  const nextBtnV = `<button class="btn primary" style="margin-top:1rem;width:100%" onclick="advanceQuiz()">Next →</button>`;
   const feedbackHTML = isCorrect
-    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTMLv}${kbHTML}</div>${nextBtnV}`
-    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${mnemonicHTMLv}${kbHTML}</div>${nextBtnV}`;
+    ? `<div class="quiz-feedback good">✓ Correct!${mnemonicHTMLv}${kbHTML}</div>`
+    : `<div class="quiz-feedback bad">✗ Correct: <strong>${q.jp}</strong> (${q.reading}) — ${q.en}${mnemonicHTMLv}${kbHTML}</div>`;
 
   if (isCorrect) {
     haptic([15, 30, 20]);
@@ -1401,6 +1404,8 @@ function answerQuiz(i) {
   } else {
     haptic([40, 40, 40, 40, 40]);
     state.stats.vocab[q.jp].incorrect++;
+    state.quiz.order.push(q);
+    state.quiz.total++;
   }
   saveLevelStats();
   const key = progKey(state.level, state.lesson);
@@ -1408,7 +1413,10 @@ function answerQuiz(i) {
   saveProgress();
   renderStats();
 
-  setTimeout(() => { $('qOpts').innerHTML = feedbackHTML; }, 500);
+  setTimeout(() => { 
+    $('qOpts').innerHTML = feedbackHTML; 
+    setTimeout(advanceQuiz, isCorrect ? 1200 : 2500);
+  }, 500);
 }
 
 // ── Kanji List ──
