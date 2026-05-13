@@ -486,6 +486,27 @@
     to   { opacity: 1; transform: none; }
   }
   .animate-in { animation: fadeIn 0.28s var(--ease); }
+
+  /* ── Card Notes ── */
+  .card-note-area { margin: 0.75rem 0 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .card-note-textarea {
+    width: 100%; min-height: 68px; padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--surface); color: var(--ink); font: inherit;
+    font-size: 0.88rem; line-height: 1.55; resize: vertical;
+    transition: border-color 0.15s;
+  }
+  .card-note-textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .card-note-textarea::placeholder { color: var(--muted); opacity: 0.7; }
+  .note-save-row { display: flex; align-items: center; justify-content: flex-end; }
+  .note-save-btn {
+    font: inherit; font-size: 0.75rem; font-weight: 700;
+    padding: 0.3rem 0.9rem; border-radius: 99px;
+    border: 1.5px solid var(--border); background: transparent;
+    color: var(--muted); cursor: pointer; transition: all 0.15s var(--ease);
+  }
+  .note-save-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .note-save-btn.saved { border-color: var(--good); color: var(--good); background: var(--good-soft); }
 </style>
 </head>
 <body>
@@ -734,6 +755,8 @@ const state = {
   progress: loadProgress(),
   review: loadReview(),
   mastered: loadMastered(),
+  notes: loadNotes(),
+  noteDraft: {},
   stats: loadLevelStats(session.level || 'N5'),
 };
 
@@ -788,6 +811,50 @@ function toggleMastered(type, level, key) {
   if (idx === -1) arr.push(key); else arr.splice(idx, 1);
   saveMastered();
   buildLessonSelect();
+}
+
+// ── Notes ──
+function loadNotes() {
+  try { return JSON.parse(localStorage.getItem('jlpt_notes') || '{}'); }
+  catch { return {}; }
+}
+function saveNotes() { localStorage.setItem('jlpt_notes', JSON.stringify(state.notes)); }
+function getNote(type, key) { return (state.notes[type] || {})[key] || ''; }
+function setNote(type, key, text) {
+  if (!state.notes[type]) state.notes[type] = {};
+  if (text) state.notes[type][key] = text;
+  else delete state.notes[type][key];
+  saveNotes();
+}
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function noteAreaHTML(type, key) {
+  const draftKey = type + '\x00' + key;
+  const val = state.noteDraft[draftKey] !== undefined ? state.noteDraft[draftKey] : getNote(type, key);
+  return `<div class="card-note-area">
+    <textarea class="card-note-textarea" id="cardNoteTA" placeholder="Add a note for this card...">${escapeHtml(val)}</textarea>
+    <div class="note-save-row">
+      <button class="note-save-btn" id="cardNoteSaveBtn">Save note</button>
+    </div>
+  </div>`;
+}
+function wireNoteArea(type, key) {
+  const ta = document.getElementById('cardNoteTA');
+  const btn = document.getElementById('cardNoteSaveBtn');
+  if (!ta || !btn) return;
+  const draftKey = type + '\x00' + key;
+  ta.addEventListener('input', () => { state.noteDraft[draftKey] = ta.value; });
+  ta.addEventListener('click', e => e.stopPropagation());
+  ta.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const text = ta.value.trim();
+    setNote(type, key, text);
+    btn.textContent = 'Saved ✓';
+    btn.classList.add('saved');
+    setTimeout(() => { btn.textContent = 'Save note'; btn.classList.remove('saved'); }, 1500);
+  });
 }
 
 function getItemStats(term) {
@@ -936,6 +1003,7 @@ function renderKanjiFlashcard() {
         </div>
       </div>
     </div>
+    ${noteAreaHTML('kanji', k.kanji)}
     <div class="card-nav">
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
@@ -946,6 +1014,7 @@ function renderKanjiFlashcard() {
       </div>
     </div>`;
   $('kflash').addEventListener('click', () => { state.flipped = !state.flipped; renderKanjiFlashcard(); });
+  wireNoteArea('kanji', k.kanji);
   renderStats();
 }
 
@@ -1020,6 +1089,7 @@ function renderFlashcard() {
         </div>
       </div>
     </div>
+    ${noteAreaHTML('vocab', w.jp)}
     <div class="card-nav">
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
@@ -1027,6 +1097,7 @@ function renderFlashcard() {
       <button class="bookmark-btn ${isInReview('vocab', state.level, w.jp) ? 'marked' : ''}" onclick="toggleVocabBookmark(event,'${w.jp}')" title="Add to review">${isInReview('vocab', state.level, w.jp) ? '★' : '☆'}</button>
     </div>`;
   $('flashcard').addEventListener('click', () => { state.flipped = !state.flipped; renderFlashcard(); });
+  wireNoteArea('vocab', w.jp);
   renderStats();
 }
 
@@ -1441,12 +1512,14 @@ function renderGrammarFlashcard() {
         </div>
       </div>
     </div>
+    ${noteAreaHTML('grammar', p.pattern)}
     <div class="card-nav">
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
     </div>`;
   $('gflash').addEventListener('click', () => { state.flipped = !state.flipped; renderGrammarFlashcard(); });
+  wireNoteArea('grammar', p.pattern);
   renderStats();
 }
 
