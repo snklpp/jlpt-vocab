@@ -1,10 +1,10 @@
-const CACHE_NAME = 'jlpt-study-v29';
+const CACHE_NAME = 'jlpt-study-v30';
 const ASSETS = [
   './',
   './index.html',
-  './vocab.js?v=29',
-  './kanji.js?v=29',
-  './grammar.js?v=29',
+  './vocab.js?v=30',
+  './kanji.js?v=30',
+  './grammar.js?v=30',
   './icon-512.png'
 ];
 

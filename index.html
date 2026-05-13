@@ -638,9 +638,9 @@
   </div>
 </div>
 
-<script src="vocab.js?v=29"></script>
-<script src="kanji.js?v=29"></script>
-<script src="grammar.js?v=29"></script>
+<script src="vocab.js?v=30"></script>
+<script src="kanji.js?v=30"></script>
+<script src="grammar.js?v=30"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -700,8 +700,9 @@ function splitMorae(r) {
   }
   return out;
 }
-function kanaRomaji(reading, showRomaji, wrapClass = 'card-reading') {
-  if (!showRomaji) return `<div class="${wrapClass}">${reading}</div>`;
+function kanaRomaji(reading, mode, wrapClass = 'card-reading') {
+  if (mode === 'none') return '';
+  if (mode === false || mode === 'kana') return `<div class="${wrapClass}">${reading}</div>`;
   const units = splitMorae(reading).map(m =>
     `<span class="mora-unit"><span class="mora-k">${m.kana}</span><span class="mora-r">${m.romaji}</span></span>`
   ).join('');
@@ -1713,7 +1714,7 @@ function openDrawer() {
   $('drawerLesson').innerHTML = $('lesson').innerHTML;
   $('drawerLesson').value = $('lesson').value;
   // Sync drawer controls
-  $('drawerShowRomaji').checked = state.showRomaji;
+  $('drawerShowRomaji').checked = state.showRomaji === true || state.showRomaji === 'all';
   $('drawerQuizReverse').checked = state.quiz.reverse;
   $('drawerRomajiWrap').style.display = state.section === 'kanji' ? 'none' : 'inline-flex';
   $('drawerQuizDirWrap').style.display = state.mode === 'quiz' ? 'inline-flex' : 'none';
@@ -1747,10 +1748,12 @@ $('lesson').addEventListener('change', e => {
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => switchMode(b.dataset.mode)));
 document.querySelectorAll('[data-sec]').forEach(b => b.addEventListener('click', () => switchSection(b.dataset.sec)));
 $('showRomaji').addEventListener('change', e => {
-  state.showRomaji = e.target.checked;
+  state.showRomaji = e.target.checked ? 'all' : 'kana';
   if (state.mode === 'flashcard') renderCurrentFlashcard();
   else if (state.mode === 'quiz') { if (state.section === 'kanji') renderKanjiQuestion(); else renderQuizQuestion(); }
+  else if (state.mode === 'list') { if (state.section === 'kanji') renderKanjiList(); else renderList(); }
   saveSession();
+  updateRomajiBtn();
 });
 $('quizReverse').addEventListener('change', e => {
   state.quiz.reverse = e.target.checked;
@@ -1800,9 +1803,16 @@ document.documentElement.style.setProperty('--font-scale', state.fontScale);
 $('level').value = state.level;
 $('romajiBtn').addEventListener('click', () => {
   haptic(10);
-  state.showRomaji = !state.showRomaji;
-  if ($('showRomaji')) $('showRomaji').checked = state.showRomaji;
-  if ($('drawerShowRomaji')) $('drawerShowRomaji').checked = state.showRomaji;
+  if (state.showRomaji === true || state.showRomaji === 'all') {
+    state.showRomaji = 'kana';
+  } else if (state.showRomaji === false || state.showRomaji === 'kana') {
+    state.showRomaji = 'none';
+  } else {
+    state.showRomaji = 'all';
+  }
+  
+  if ($('showRomaji')) $('showRomaji').checked = state.showRomaji === 'all' || state.showRomaji === true;
+  if ($('drawerShowRomaji')) $('drawerShowRomaji').checked = state.showRomaji === 'all' || state.showRomaji === true;
   
   if (state.mode === 'flashcard') renderCurrentFlashcard();
   else if (state.mode === 'quiz') { 
@@ -1821,18 +1831,31 @@ $('romajiBtn').addEventListener('click', () => {
 
 function updateRomajiBtn() {
   const btn = $('romajiBtn');
-  if (state.showRomaji) {
+  if (state.showRomaji === true || state.showRomaji === 'all') {
+    btn.textContent = 'R';
     btn.style.color = 'var(--accent)';
     btn.style.borderColor = 'var(--accent)';
     btn.style.background = 'var(--accent-soft)';
+    btn.style.opacity = '1';
+    btn.title = 'Reading: Romaji + Kana';
+  } else if (state.showRomaji === false || state.showRomaji === 'kana') {
+    btn.textContent = 'あ';
+    btn.style.color = 'var(--text)';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.background = 'var(--surface)';
+    btn.style.opacity = '1';
+    btn.title = 'Reading: Kana only';
   } else {
+    btn.textContent = '漢';
     btn.style.color = 'var(--muted)';
     btn.style.borderColor = 'var(--border)';
     btn.style.background = 'none';
+    btn.style.opacity = '0.5';
+    btn.title = 'Reading: Hidden';
   }
 }
 updateRomajiBtn();
-$('showRomaji').checked = state.showRomaji;
+$('showRomaji').checked = state.showRomaji === true || state.showRomaji === 'all';
 $('quizReverse').checked = state.quiz.reverse;
 let touchStartX = 0;
 let touchStartY = 0;
