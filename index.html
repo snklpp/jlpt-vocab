@@ -638,9 +638,9 @@
   </div>
 </div>
 
-<script src="vocab.js?v=30"></script>
-<script src="kanji.js?v=30"></script>
-<script src="grammar.js?v=30"></script>
+<script src="vocab.js?v=31"></script>
+<script src="kanji.js?v=31"></script>
+<script src="grammar.js?v=31"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -990,12 +990,16 @@ function renderKanjiFlashcard() {
         <div class="card-face front">
           ${getItemStats(k.kanji)}
           <div class="kanji-char" title="Click to copy">${k.kanji}</div>
+          ${state.showRomaji !== 'none' ? `<div style="display:flex; gap:1rem; justify-content:center; margin-bottom:0.5rem">
+            ${k.kun ? `<span style="font-size:0.95rem; color:var(--muted)">くん: ${k.kun}</span>` : ''}
+            ${k.on ? `<span style="font-size:0.95rem; color:var(--muted)">おん: ${k.on}</span>` : ''}
+          </div>` : ''}
           <div class="tap-hint">tap to reveal</div>
         </div>
         <div class="card-face back">
           ${getItemStats(k.kanji)}
           <div class="kanji-char" style="font-size:4rem;margin-bottom:0.5rem" title="Click to copy">${k.kanji}</div>
-          <div class="kanji-readings">
+          ${state.showRomaji !== 'none' ? `<div class="kanji-readings">
             ${k.kun ? `<div class="kanji-reading-block">
               <span class="kanji-reading-label">くんよみ</span>
               <div class="kanji-reading-val">${k.kun}</div>
@@ -1004,7 +1008,7 @@ function renderKanjiFlashcard() {
               <span class="kanji-reading-label">おんよみ</span>
               <div class="kanji-reading-val">${k.on}</div>
             </div>` : ''}
-          </div>
+          </div>` : ''}
           <div class="kanji-imi">${k.imi}</div>
           <div class="kanji-en">${k.en}</div>
           ${k.mnemonic ? `<div class="kanji-mnemonic">
@@ -1079,13 +1083,15 @@ function renderFlashcard() {
     return;
   }
   const w = state.deck[state.idx];
-  const romajiHTML = state.showRomaji ? `<div class="card-romaji">${w.romaji}</div>` : '';
   $('content').innerHTML = `
     <div class="flashcard-scene animate-in">
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="flashcard">
         <div class="card-face front">
           ${getItemStats(w.jp)}
           <div class="card-jp" title="Click to copy">${w.jp}</div>
+          <div class="reading-romaji-stack">
+            ${kanaRomaji(w.reading, state.showRomaji)}
+          </div>
           <div class="tap-hint">tap to reveal</div>
         </div>
         <div class="card-face back">
