@@ -524,6 +524,11 @@
   .kana-cell:hover { border-color: var(--accent); }
   .kana-char { font-size: 2.1rem; font-weight: 700; line-height: 1; }
   .kana-romaji { font-size: 0.7rem; color: var(--muted); font-weight: 700; letter-spacing: 0.04em; }
+  .kana-group-picker { display:flex; flex-wrap:wrap; gap:0.35rem; padding:0.4rem 0 0.2rem; }
+  .kana-group-chip { border:2px solid var(--border); border-radius:20px; padding:0.22rem 0.72rem; font-size:0.78rem; cursor:pointer; background:transparent; color:var(--text); transition:all 0.15s; line-height:1.5; }
+  .kana-group-chip.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
+  .kana-countdown-wrap { height:3px; background:var(--border); border-radius:2px; margin:0.5rem 0 0; overflow:hidden; }
+  .kana-countdown-bar { height:100%; width:100%; background:var(--accent); }
 </style>
 </head>
 <body>
@@ -573,7 +578,11 @@
     <label class="checkbox-label" id="quizDirWrap" style="display:none">
       <input type="checkbox" id="quizReverse"> EN → JP
     </label>
+    <label class="checkbox-label" id="kanaAutoWrap" style="display:none">
+      <input type="checkbox" id="kanaAutoAdv" checked> Auto-advance
+    </label>
   </div>
+  <div id="kanaGroupPicker" style="display:none" class="kana-group-picker"></div>
 
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="stats" id="stats"></div>
@@ -753,7 +762,7 @@ function saveSession() {
     section: state.section,
     lesson: state.lesson,
     kanjiGroup: state.kanjiGroup,
-    kanaGroup: state.kanaGroup,
+    kanaGroups: state.kanaGroups,
     mode: state.mode,
     showRomaji: state.showRomaji,
     quizReverse: state.quiz.reverse,
@@ -844,7 +853,7 @@ const state = {
   level: session.level || 'N5',
   lesson: session.lesson || 1,
   kanjiGroup: session.kanjiGroup || 'all',
-  kanaGroup: session.kanaGroup || 'basic',
+  kanaGroups: (session.kanaGroups && session.kanaGroups.length) ? session.kanaGroups : ['basic'],
   mode: session.mode || 'flashcard',
   idx: 0,
   flipped: false,
@@ -975,18 +984,15 @@ function shuffleArr(a) {
 function isKana() { return state.section === 'hiragana' || state.section === 'katakana'; }
 function deckKey() {
   if (state.section === 'kanji') return `kanji_${state.level}_${state.kanjiGroup}`;
-  if (isKana()) return `kana_${state.section}_${state.kanaGroup}`;
+  if (isKana()) return `kana_${state.section}_${[...state.kanaGroups].sort().join('+')}`;
   return progKey(state.level, state.lesson);
 }
 
 // ── Lesson / group select ──
 function buildLessonSelect() {
   if (isKana()) {
-    const groups = KANA_GROUPS[state.section];
-    const total = groups.reduce((s, g) => s + g.chars.length, 0);
-    $('lesson').innerHTML = `<option value="all">All (${total})</option>` +
-      groups.map(g => `<option value="${g.id}">${g.name} (${g.chars.length})</option>`).join('');
-    $('lesson').value = state.kanaGroup;
+    $('lesson').style.display = 'none';
+    buildKanaGroupPicker();
     return;
   }
   if (state.section === 'kanji') {
@@ -1027,10 +1033,9 @@ function buildLessonSelect() {
 
 function loadDeck() {
   if (isKana()) {
-    const groups = KANA_GROUPS[state.section];
-    state.deck = state.kanaGroup === 'all'
-      ? groups.flatMap(g => g.chars)
-      : (groups.find(g => g.id === state.kanaGroup)?.chars || []);
+    state.deck = KANA_GROUPS[state.section]
+      .filter(g => state.kanaGroups.includes(g.id))
+      .flatMap(g => g.chars);
   } else if (state.section === 'kanji') {
     if (state.kanjiGroup === '__review__') {
       const keys = reviewList('kanji', state.level);
@@ -1228,10 +1233,14 @@ function renderFlashcard() {
   renderStats();
 }
 
+let kanaAutoTimer = null;
+function clearKanaAutoTimer() { if (kanaAutoTimer) { clearTimeout(kanaAutoTimer); kanaAutoTimer = null; } }
+
 // ── Kana flashcard ──
 function renderKanaFlashcard() {
+  clearKanaAutoTimer();
   if (state.deck.length === 0) {
-    $('content').innerHTML = `<div class="empty">No characters in this group.</div>`; return;
+    $('content').innerHTML = `<div class="empty">No characters selected. Enable at least one group above.</div>`; return;
   }
   if (state.idx >= state.deck.length) {
     $('content').innerHTML = `
@@ -1245,6 +1254,7 @@ function renderKanaFlashcard() {
     return;
   }
   const c = state.deck[state.idx];
+  const autoOn = $('kanaAutoAdv') && $('kanaAutoAdv').checked;
   $('content').innerHTML = `
     <div class="flashcard-scene animate-in">
       <div class="flashcard-inner${state.flipped ? ' flipped' : ''}" id="kanaFlash">
@@ -1255,6 +1265,7 @@ function renderKanaFlashcard() {
         <div class="card-face back">
           <div style="font-size:4.5rem; font-weight:700; line-height:1; margin-bottom:0.75rem">${c.char}</div>
           <div style="font-size:2.75rem; font-weight:800; color:var(--accent); letter-spacing:0.06em">${c.romaji}</div>
+          ${autoOn ? `<div class="kana-countdown-wrap"><div class="kana-countdown-bar" id="kanaCountdownBar"></div></div>` : ''}
         </div>
       </div>
     </div>
@@ -1267,13 +1278,21 @@ function renderKanaFlashcard() {
   bindCardFlip('kanaFlash', renderKanaFlashcard);
   wireNoteArea(state.section, c.char);
   renderStats();
+  if (state.flipped && autoOn) {
+    const bar = $('kanaCountdownBar');
+    if (bar) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        bar.style.transition = 'width 1.5s linear';
+        bar.style.width = '0%';
+      }));
+    }
+    kanaAutoTimer = setTimeout(() => nextCard(), 1500);
+  }
 }
 
 // ── Kana list ──
 function renderKanaList() {
-  const groups = state.kanaGroup === 'all'
-    ? KANA_GROUPS[state.section]
-    : KANA_GROUPS[state.section].filter(g => g.id === state.kanaGroup);
+  const groups = KANA_GROUPS[state.section].filter(g => state.kanaGroups.includes(g.id));
   $('content').innerHTML = groups.map(g => `
     <div class="list-group-header">${g.name}</div>
     <div class="kana-grid">
@@ -1386,6 +1405,7 @@ function renderCurrentFlashcard() {
   else renderFlashcard();
 }
 function prevCard() {
+  clearKanaAutoTimer();
   haptic(10);
   if (state.idx > 0) {
     state.idx--; state.flipped = false;
@@ -1396,6 +1416,7 @@ function prevCard() {
   }
 }
 function nextCard() {
+  clearKanaAutoTimer();
   if (!state.flipped) {
     haptic(25);
     state.flipped = true;
@@ -1933,6 +1954,7 @@ function confirmReset() {
 
 // ── Mode / section switching ──
 function switchMode(m) {
+  clearKanaAutoTimer();
   if (state.section === 'grammar' && m === 'quiz') m = 'list';
   if (isKana() && m === 'stats') m = 'flashcard';
   state.mode = m;
@@ -1966,14 +1988,41 @@ function switchMode(m) {
   closeDrawer();
 }
 
+function buildKanaGroupPicker() {
+  const picker = $('kanaGroupPicker');
+  if (!picker) return;
+  const groups = KANA_GROUPS[state.section];
+  picker.innerHTML = groups.map(g =>
+    `<button class="kana-group-chip${state.kanaGroups.includes(g.id) ? ' on' : ''}" data-gid="${g.id}">${g.name}</button>`
+  ).join('');
+  picker.querySelectorAll('.kana-group-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const gid = btn.dataset.gid;
+      const idx = state.kanaGroups.indexOf(gid);
+      if (idx >= 0) {
+        if (state.kanaGroups.length > 1) state.kanaGroups.splice(idx, 1);
+      } else {
+        state.kanaGroups.push(gid);
+      }
+      btn.classList.toggle('on', state.kanaGroups.includes(gid));
+      saveSession();
+      loadDeck();
+      switchMode(state.mode);
+    });
+  });
+}
+
 function switchSection(sec) {
   state.section = sec;
   document.querySelectorAll('[data-sec]').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
   state.kanjiGroup = 'all';
   const kana = sec === 'hiragana' || sec === 'katakana';
   $('level').style.display = kana ? 'none' : '';
+  $('lesson').style.display = kana ? 'none' : '';
+  $('kanaGroupPicker').style.display = kana ? '' : 'none';
+  $('kanaAutoWrap').style.display = kana ? '' : 'none';
   if (kana) {
-    state.kanaGroup = 'basic';
+    state.kanaGroups = ['basic'];
     if (state.mode === 'stats') state.mode = 'flashcard';
   } else if (sec === 'grammar') {
     const gLessons = getGrammarLessons(state.level);
@@ -1996,8 +2045,11 @@ function openDrawer() {
   $('drawerLevel').style.display = kana ? 'none' : '';
   $('drawerLevel').innerHTML = $('level').innerHTML;
   $('drawerLevel').value = $('level').value;
-  $('drawerLesson').innerHTML = $('lesson').innerHTML;
-  $('drawerLesson').value = $('lesson').value;
+  $('drawerLesson').style.display = kana ? 'none' : '';
+  if (!kana) {
+    $('drawerLesson').innerHTML = $('lesson').innerHTML;
+    $('drawerLesson').value = $('lesson').value;
+  }
   // Sync drawer controls
   $('drawerShowRomaji').checked = state.showRomaji === true || state.showRomaji === 'all';
   $('drawerQuizReverse').checked = state.quiz.reverse;
@@ -2023,8 +2075,7 @@ $('level').addEventListener('change', e => {
 });
 $('lesson').addEventListener('change', e => {
   if (state.section === 'kanji') state.kanjiGroup = e.target.value;
-  else if (isKana()) state.kanaGroup = e.target.value;
-  else {
+  else if (!isKana()) {
     const v = e.target.value;
     state.lesson = v === '__review__' ? '__review__' : parseInt(v, 10);
   }
@@ -2211,9 +2262,14 @@ function setupSwipes() {
   }, { passive: true });
 }
 
-// Restore section active chip and level visibility on load
+// Restore section active chip and level/lesson visibility on load
 document.querySelectorAll('[data-sec]').forEach(b => b.classList.toggle('active', b.dataset.sec === state.section));
-if (isKana()) $('level').style.display = 'none';
+if (isKana()) {
+  $('level').style.display = 'none';
+  $('lesson').style.display = 'none';
+  $('kanaGroupPicker').style.display = '';
+  $('kanaAutoWrap').style.display = '';
+}
 buildLessonSelect();
 setupSwipes();
 switchMode(state.mode);
