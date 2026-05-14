@@ -1391,6 +1391,7 @@ function answerKanaQuiz(i) {
 }
 function advanceKanaQuiz() {
   state.quiz.idx++;
+  state.quiz.answered = false;
   state.quiz.options = [];
   const key = deckKey();
   if (state.progress[key]) state.progress[key].quizState = state.quiz;
