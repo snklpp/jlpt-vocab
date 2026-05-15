@@ -1378,18 +1378,31 @@ function answerKanaQuiz(i) {
   const isCorrect = picked.char === q.char;
   if (isCorrect) { haptic([15, 30, 20]); state.quiz.score++; }
   else { haptic([40, 40, 40, 40, 40]); }
+  const autoOn = $('kanaAutoAdv') && $('kanaAutoAdv').checked;
+  const countdown = autoOn ? `<div class="kana-countdown-wrap" style="margin-top:0.75rem"><div class="kana-countdown-bar" id="kanaCountdownBar"></div></div>` : '';
   const nextBtn = `<button class="btn primary" style="margin-top:1rem;width:100%" onclick="advanceKanaQuiz()">Next →</button>`;
   const feedbackHTML = isCorrect
-    ? `<div class="quiz-feedback good">✓ Correct!</div>${nextBtn}`
-    : `<div class="quiz-feedback bad">✗ Answer: <strong>${q.char}</strong> = ${q.romaji}</div>${nextBtn}`;
+    ? `<div class="quiz-feedback good">✓ Correct!</div>${countdown}${autoOn ? '' : nextBtn}`
+    : `<div class="quiz-feedback bad">✗ Answer: <strong>${q.char}</strong> = ${q.romaji}</div>${countdown}${autoOn ? '' : nextBtn}`;
   const key = deckKey();
   if (!state.progress[key]) state.progress[key] = {};
   state.progress[key].quizState = state.quiz;
   saveProgress();
   renderStats();
-  setTimeout(() => { $('qOpts').innerHTML = feedbackHTML; }, 500);
+  setTimeout(() => {
+    $('qOpts').innerHTML = feedbackHTML;
+    if (autoOn) {
+      const bar = $('kanaCountdownBar');
+      if (bar) requestAnimationFrame(() => requestAnimationFrame(() => {
+        bar.style.transition = 'width 1.5s linear';
+        bar.style.width = '0%';
+      }));
+      kanaAutoTimer = setTimeout(() => advanceKanaQuiz(), 1500);
+    }
+  }, 500);
 }
 function advanceKanaQuiz() {
+  clearKanaAutoTimer();
   state.quiz.idx++;
   state.quiz.answered = false;
   state.quiz.options = [];
