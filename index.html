@@ -1312,6 +1312,8 @@ function startKanaQuiz() {
   const p = state.progress[key] || {};
   if (p.quizState && p.quizState.idx < p.quizState.total && p.quizState.reverse === state.quiz.reverse) {
     state.quiz = p.quizState;
+    state.quiz.answered = false;
+    state.quiz.options = [];
   } else {
     if (state.deck.length < 4) {
       $('content').innerHTML = `<div class="empty">Need at least 4 characters for quiz.</div>`; return;
@@ -1390,7 +1392,9 @@ function answerKanaQuiz(i) {
   saveProgress();
   renderStats();
   setTimeout(() => {
-    $('qOpts').innerHTML = feedbackHTML;
+    const qOpts = $('qOpts');
+    if (!qOpts) return;
+    qOpts.innerHTML = feedbackHTML;
     if (autoOn) {
       const bar = $('kanaCountdownBar');
       if (bar) requestAnimationFrame(() => requestAnimationFrame(() => {
