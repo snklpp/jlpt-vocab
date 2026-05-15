@@ -1033,9 +1033,9 @@ function buildLessonSelect() {
 
 function loadDeck() {
   if (isKana()) {
-    state.deck = KANA_GROUPS[state.section]
+    state.deck = shuffleArr(KANA_GROUPS[state.section]
       .filter(g => state.kanaGroups.includes(g.id))
-      .flatMap(g => g.chars);
+      .flatMap(g => g.chars));
   } else if (state.section === 'kanji') {
     if (state.kanjiGroup === '__review__') {
       const keys = reviewList('kanji', state.level);
@@ -1282,11 +1282,11 @@ function renderKanaFlashcard() {
     const bar = $('kanaCountdownBar');
     if (bar) {
       requestAnimationFrame(() => requestAnimationFrame(() => {
-        bar.style.transition = 'width 1.5s linear';
+        bar.style.transition = 'width 0.75s linear';
         bar.style.width = '0%';
       }));
     }
-    kanaAutoTimer = setTimeout(() => nextCard(), 1500);
+    kanaAutoTimer = setTimeout(() => nextCard(), 750);
   }
 }
 
@@ -1394,10 +1394,10 @@ function answerKanaQuiz(i) {
     if (autoOn) {
       const bar = $('kanaCountdownBar');
       if (bar) requestAnimationFrame(() => requestAnimationFrame(() => {
-        bar.style.transition = 'width 1.5s linear';
+        bar.style.transition = 'width 0.75s linear';
         bar.style.width = '0%';
       }));
-      kanaAutoTimer = setTimeout(() => advanceKanaQuiz(), 1500);
+      kanaAutoTimer = setTimeout(() => advanceKanaQuiz(), 750);
     }
   }, 500);
 }
