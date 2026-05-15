@@ -1269,14 +1269,13 @@ function renderKanaFlashcard() {
         </div>
       </div>
     </div>
-    ${noteAreaHTML(state.section, c.char)}
     <div class="card-nav">
       <button class="btn" onclick="prevCard()" ${state.idx === 0 ? 'disabled' : ''}>← Prev</button>
       <span class="counter">${state.idx + 1} / ${state.deck.length}</span>
       <button class="btn primary" onclick="nextCard()">${state.flipped ? 'Next →' : 'Reveal'}</button>
+      <button class="bookmark-btn ${isInReview('kana', state.section, c.char) ? 'marked' : ''}" onclick="toggleKanaBookmark(event,'${c.char}')" title="Add to review">${isInReview('kana', state.section, c.char) ? '★' : '☆'}</button>
     </div>`;
   bindCardFlip('kanaFlash', renderKanaFlashcard);
-  wireNoteArea(state.section, c.char);
   renderStats();
   if (state.flipped && autoOn) {
     const bar = $('kanaCountdownBar');
@@ -1612,6 +1611,11 @@ function toggleVocabBookmark(e, jp) {
   toggleReview('vocab', state.level, jp);
   if (state.mode === 'flashcard') renderFlashcard();
   else if (state.mode === 'list') renderList();
+}
+function toggleKanaBookmark(e, char) {
+  e.stopPropagation();
+  toggleReview('kana', state.section, char);
+  if (state.mode === 'flashcard') renderKanaFlashcard();
 }
 
 
