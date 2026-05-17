@@ -208,6 +208,7 @@
   .grammar-ex-jp { font-size: 1rem; font-weight: 600; color: var(--ink); }
   .grammar-ex-romaji { font-size: 0.78rem; color: var(--muted); font-style: italic; }
   .grammar-ex-en { font-size: 0.88rem; color: var(--muted); }
+  .grammar-ex-hi { font-size: 0.82rem; color: var(--muted); opacity: 0.75; }
   .card-en { font-size: 2rem; font-weight: 700; color: var(--accent); }
   .kanji-breakdown { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.9rem; padding: 0.7rem 0.9rem; background: var(--surface); border-radius: 8px; }
   .kb-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 700; margin-right: 0.2rem; flex-shrink: 0; }
@@ -665,7 +666,7 @@
 
 <script src="vocab.js?v=31"></script>
 <script src="kanji.js?v=31"></script>
-<script src="grammar.js?v=31"></script>
+<script src="grammar.js?v=32"></script>
 <script>
 const $ = id => document.getElementById(id);
 const haptic = (p = 15) => { if (navigator.vibrate) navigator.vibrate(p); };
@@ -1460,6 +1461,7 @@ function restartDeck() {
   if (state.mode === 'flashcard') renderCurrentFlashcard();
   else if (state.mode === 'quiz') {
     if (state.section === 'kanji') startKanjiQuiz();
+    else if (state.section === 'grammar') startGrammarQuiz();
     else if (isKana()) startKanaQuiz();
     else startQuiz();
   }
@@ -1801,6 +1803,7 @@ function renderGrammarList() {
           <div class="grammar-ex-jp">${e.jp}</div>
           <div class="grammar-ex-romaji">${e.romaji}</div>
           <div class="grammar-ex-en">${e.en}</div>
+          ${e.hi ? `<div class="grammar-ex-hi">${e.hi}</div>` : ''}
         </div>`).join('')}
       </div>` : ''}
     </div>`).join('');
@@ -1842,6 +1845,7 @@ function renderGrammarFlashcard() {
               <div style="font-size:0.95rem;font-weight:600">${e.jp}</div>
               <div style="font-size:0.75rem;color:var(--muted);font-style:italic">${e.romaji}</div>
               <div style="font-size:0.85rem;color:var(--muted)">${e.en}</div>
+              ${e.hi ? `<div style="font-size:0.8rem;color:var(--muted);opacity:0.75">${e.hi}</div>` : ''}
             </div>`).join('')}
           </div>` : ''}
         </div>
@@ -1856,6 +1860,106 @@ function renderGrammarFlashcard() {
   bindCardFlip('gflash', renderGrammarFlashcard);
   wireNoteArea('grammar', p.pattern);
   renderStats();
+}
+
+// ── Grammar Quiz ──
+function startGrammarQuiz() {
+  const key = `grammar_${state.level}_${state.lesson}`;
+  const p = state.progress[key] || {};
+  const data = getGrammarLesson(state.level, state.lesson);
+  if (!data || data.points.length < 2) {
+    $('content').innerHTML = `<div class="empty">Need at least 2 patterns for quiz.</div>`; return;
+  }
+  if (p.quizState && p.quizState.idx < p.quizState.total && p.quizState.reverse === $('quizReverse').checked) {
+    state.quiz = p.quizState;
+    state.quiz.answered = false;
+    state.quiz.options = [];
+  } else {
+    const order = shuffleArr([...data.points]);
+    state.quiz = { idx: 0, score: 0, answered: false, total: order.length, order, reverse: $('quizReverse').checked, options: [] };
+    state.progress[key] = { ...p, quizState: state.quiz };
+    saveProgress();
+  }
+  renderGrammarQuestion();
+}
+
+function renderGrammarQuestion() {
+  if (state.quiz.idx >= state.quiz.total) {
+    const pct = Math.round((state.quiz.score / state.quiz.total) * 100);
+    const msg = pct >= 90 ? '素晴らしい!' : pct >= 70 ? 'よくできました!' : pct >= 50 ? 'がんばって!' : 'もう一度!';
+    $('content').innerHTML = `
+      <div class="summary animate-in">
+        <div class="summary-title">${msg}</div>
+        <div class="summary-score">${pct}%</div>
+        <div class="summary-sub">${state.quiz.score} / ${state.quiz.total} correct</div>
+        <div class="btn-group"><button class="btn primary" onclick="startGrammarQuiz()">Try again</button></div>
+      </div>`;
+    $('progressFill').style.width = '100%';
+    return;
+  }
+  const q = state.quiz.order[state.quiz.idx];
+  if (!state.quiz.options || state.quiz.options.length === 0) {
+    const allPoints = getGrammarLessons(state.level)
+      .flatMap(n => (getGrammarLesson(state.level, n) || { points: [] }).points)
+      .filter(pt => pt.meaning !== q.meaning);
+    const distractors = shuffleArr(allPoints).slice(0, 3);
+    state.quiz.options = shuffleArr([q, ...distractors]);
+  }
+  const reverse = state.quiz.reverse;
+  const opts = state.quiz.options;
+  $('content').innerHTML = `
+    <div class="quiz-wrap animate-in">
+      <div style="margin-top:1.5rem"></div>
+      ${reverse
+        ? `<div class="quiz-word text">${q.meaning}</div><div class="quiz-sub">&nbsp;</div>`
+        : `<div class="quiz-word text" style="font-size:1.55rem;letter-spacing:0.02em">${q.pattern}</div>
+           <div class="quiz-sub">${q.romaji || '&nbsp;'}</div>`}
+      <div class="quiz-options" id="qOpts">
+        ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">
+          ${reverse
+            ? `<div style="font-size:0.9rem;line-height:1.4">${o.pattern}</div>`
+            : `<div style="font-size:0.9rem">${o.meaning}</div>`}
+        </button>`).join('')}
+      </div>
+    </div>`;
+  $('qOpts').querySelectorAll('.quiz-option').forEach(btn =>
+    btn.addEventListener('click', () => answerGrammarQuiz(parseInt(btn.dataset.i)))
+  );
+  renderStats();
+}
+
+function answerGrammarQuiz(i) {
+  if (state.quiz.answered) return;
+  state.quiz.answered = true;
+  const q = state.quiz.order[state.quiz.idx];
+  const picked = state.quiz.options[i];
+  const correctIdx = state.quiz.options.findIndex(o => o.meaning === q.meaning);
+  $('qOpts').querySelectorAll('.quiz-option').forEach((b, bi) => {
+    b.disabled = true;
+    if (bi === correctIdx) b.classList.add('correct');
+    else if (bi === i) b.classList.add('wrong');
+  });
+  const isCorrect = picked.meaning === q.meaning;
+  const feedbackHTML = isCorrect
+    ? `<div class="quiz-feedback good">✓ ${q.meaning}</div>`
+    : `<div class="quiz-feedback bad">✗ <strong>${q.meaning}</strong><br><small style="font-size:0.8rem;opacity:0.8">${q.pattern}</small></div>`;
+  if (isCorrect) { haptic([15, 30, 20]); state.quiz.score++; }
+  else { haptic([40, 40, 40, 40, 40]); state.quiz.order.push(q); state.quiz.total++; }
+  const key = `grammar_${state.level}_${state.lesson}`;
+  if (!state.progress[key]) state.progress[key] = {};
+  state.progress[key].quizState = state.quiz;
+  saveProgress();
+  renderStats();
+  setTimeout(() => { $('qOpts').innerHTML = feedbackHTML; setTimeout(advanceGrammarQuiz, isCorrect ? 1200 : 2500); }, 500);
+}
+
+function advanceGrammarQuiz() {
+  state.quiz.idx++;
+  state.quiz.options = [];
+  const key = `grammar_${state.level}_${state.lesson}`;
+  if (state.progress[key]) state.progress[key].quizState = state.quiz;
+  saveProgress();
+  renderGrammarQuestion();
 }
 
 function renderList() {
@@ -1977,7 +2081,6 @@ function confirmReset() {
 // ── Mode / section switching ──
 function switchMode(m) {
   clearKanaAutoTimer();
-  if (state.section === 'grammar' && m === 'quiz') m = 'list';
   if (isKana() && m === 'stats') m = 'flashcard';
   state.mode = m;
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
@@ -1997,6 +2100,7 @@ function switchMode(m) {
     else renderKanjiList();
   } else if (state.section === 'grammar') {
     if (m === 'flashcard') renderGrammarFlashcard();
+    else if (m === 'quiz') startGrammarQuiz();
     else renderGrammarList();
   } else if (isKana()) {
     if (m === 'flashcard') renderKanaFlashcard();
@@ -2116,7 +2220,7 @@ $('showRomaji').addEventListener('change', e => {
 });
 $('quizReverse').addEventListener('change', e => {
   state.quiz.reverse = e.target.checked;
-  if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else if (isKana()) startKanaQuiz(); else startQuiz(); }
+  if (state.mode === 'quiz') { if (state.section === 'kanji') startKanjiQuiz(); else if (state.section === 'grammar') startGrammarQuiz(); else if (isKana()) startKanaQuiz(); else startQuiz(); }
   saveSession();
 });
 $('drawerShowRomaji').addEventListener('change', e => {
