@@ -1107,9 +1107,15 @@ function renderKanjiFlashcard() {
         <div class="card-face front">
           ${getItemStats(k.kanji)}
           <div class="kanji-char" title="Click to copy">${k.kanji}</div>
-          ${state.showRomaji !== 'none' ? `<div style="display:flex; gap:1rem; justify-content:center; margin-bottom:0.5rem">
-            ${k.kun ? `<span style="font-size:0.95rem; color:var(--muted)">くん: ${k.kun}</span>` : ''}
-            ${k.on ? `<span style="font-size:0.95rem; color:var(--muted)">おん: ${k.on}</span>` : ''}
+          ${state.showRomaji !== 'none' ? `<div class="kanji-readings">
+            ${k.kun ? `<div class="kanji-reading-block">
+              <span class="kanji-reading-label">くんよみ</span>
+              ${kanaRomaji(k.kun, state.showRomaji, 'kanji-reading-val')}
+            </div>` : ''}
+            ${k.on ? `<div class="kanji-reading-block">
+              <span class="kanji-reading-label">おんよみ</span>
+              ${kanaRomaji(k.on, state.showRomaji, 'kanji-reading-val')}
+            </div>` : ''}
           </div>` : ''}
           <div class="tap-hint">tap to reveal</div>
         </div>
@@ -1119,11 +1125,11 @@ function renderKanjiFlashcard() {
           ${state.showRomaji !== 'none' ? `<div class="kanji-readings">
             ${k.kun ? `<div class="kanji-reading-block">
               <span class="kanji-reading-label">くんよみ</span>
-              <div class="kanji-reading-val">${k.kun}</div>
+              ${kanaRomaji(k.kun, state.showRomaji, 'kanji-reading-val')}
             </div>` : ''}
             ${k.on ? `<div class="kanji-reading-block">
               <span class="kanji-reading-label">おんよみ</span>
-              <div class="kanji-reading-val">${k.on}</div>
+              ${kanaRomaji(k.on, state.showRomaji, 'kanji-reading-val')}
             </div>` : ''}
           </div>` : ''}
           <div class="kanji-imi">${k.imi}</div>
@@ -1525,7 +1531,12 @@ function renderKanjiQuestion() {
       ${reverse
         ? `<div class="quiz-word text">${q.en}</div><div class="quiz-sub">&nbsp;</div>`
         : `<div class="quiz-word">${q.kanji}</div>
-           <div class="quiz-sub">${[q.kun ? 'くん: ' + q.kun : '', q.on ? 'おん: ' + q.on : ''].filter(Boolean).join('　')}</div>`}
+           <div class="quiz-sub" style="display:flex; justify-content:center; gap:1.5rem; margin-bottom:1.75rem;">
+             ${state.showRomaji !== 'none' ? `
+               ${q.kun ? `<div class="reading-romaji-stack" style="margin-bottom:0;"><span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); font-weight:700; display:block; margin-bottom:0.18rem;">くんよみ</span>${kanaRomaji(q.kun, state.showRomaji)}</div>` : ''}
+               ${q.on ? `<div class="reading-romaji-stack" style="margin-bottom:0;"><span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); font-weight:700; display:block; margin-bottom:0.18rem;">おんよみ</span>${kanaRomaji(q.on, state.showRomaji)}</div>` : ''}
+             ` : '&nbsp;'}
+           </div>`}
       <div class="quiz-options" id="qOpts">
         ${opts.map((o, i) => `<button class="quiz-option" data-i="${i}">
           ${reverse
@@ -1769,8 +1780,12 @@ function renderKanjiList() {
         ${kanji.map(k => `
           <div class="list-row krow">
             <div class="kchar">${k.kanji}</div>
-            <div class="muted">${k.kun || '—'}</div>
-            <div class="muted">${k.on || '—'}</div>
+            <div class="muted">
+              ${k.kun ? `<div class="reading-romaji-stack" style="align-items:flex-start; margin:0">${kanaRomaji(k.kun, state.showRomaji, 'muted')}</div>` : '—'}
+            </div>
+            <div class="muted">
+              ${k.on ? `<div class="reading-romaji-stack" style="align-items:flex-start; margin:0">${kanaRomaji(k.on, state.showRomaji, 'muted')}</div>` : '—'}
+            </div>
             <div class="muted kimi">${k.imi}</div>
             <div>${k.en}</div>
             <div style="display:flex; gap:0.2rem; justify-content:flex-end">
